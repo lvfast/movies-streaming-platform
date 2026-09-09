@@ -2,45 +2,78 @@
 
 Portfolio-oriented movie streaming demo with a React frontend, a Java 21/Spring Boot backend, PostgreSQL, Redis, 20 seeded movies, and three local HLS fixtures. Guests can browse and search; registered users can manage a watchlist, play a fixture, and resume viewing progress.
 
-This is a resettable synthetic demo. Accounts and viewing data may be deleted at any time, and there is no backup, RPO, or RTO commitment.
+## Features
 
-## Documentation
+- Browse home rails, search the catalog, and view movie details.
+- Register, sign in, rotate refresh tokens, and sign out.
+- Maintain a per-user watchlist and playback progress.
+- Exercise HLS playlists and byte-range delivery with small local fixtures.
+- Validate the API and a bounded load profile in a disposable local stack.
 
-- [Architecture, API, data, and security](docs/architecture.md)
-- [Public OpenAPI 3.1 contract](docs/api/openapi.yaml)
-- [Local acceptance and complete repository checks](docs/runbooks/local-acceptance.md)
-- [Cloudflare R2 media operations and cost boundary](docs/runbooks/cloudflare-r2-media.md)
-- [Portable private-host deployment, rollback, and observability bundle](infra/prod-host-ops/README.md)
-- [Frontend-only development](frontend/README.md)
+## Architecture
 
-## Start the local demo
+Nginx serves the React single-page application and local media, and proxies `/api/` to a Spring Boot modular monolith. PostgreSQL stores durable application data; Redis provides disposable catalog caching and authentication rate limiting. The checked-in [OpenAPI 3.1 contract](docs/api/openapi.yaml) defines the public API and generates the frontend client.
 
-Docker Desktop with Compose v2 is the only required runtime:
+See [Architecture](docs/architecture.md) for module, data-flow, API, and security details.
 
-```sh
-docker compose -f compose.yml -f compose.local.yml up --build
-```
+## Prerequisites
 
-Open <http://localhost:8080>. The local overlay creates reusable development-only RSA keys in a named Docker volume and publishes only the Nginx entrypoint on loopback. The backend, frontend, and Redis run as unprivileged users. The official PostgreSQL entrypoint starts as root to repair volume ownership, then drops to the `postgres` user with a small required capability set.
+For the containerized application, install Docker Engine or Docker Desktop with Docker Compose v2. Host-side development and verification additionally use Python 3.10+, Java 21 with Maven 3.9+, and Node.js 22.22.2 or newer with npm.
 
-Stop the stack without deleting account data:
+## Quick start
 
-```sh
-docker compose -f compose.yml -f compose.local.yml down
-```
-
-Add `--volumes` only when intentionally resetting PostgreSQL data and the local JWT keys. Rebuilding the stack reimports the versioned catalog manifest idempotently.
-
-The API is under `/api/v1`; its request and response schemas are in the [OpenAPI contract](docs/api/openapi.yaml). API and load acceptance use a separate disposable stack and are documented in the [local acceptance runbook](docs/runbooks/local-acceptance.md). Running `python scripts/run_acceptance.py` is a safe dry-run; `--apply` is required to create local Docker resources.
-
-## Delivery and operations boundary
-
-Production configuration is an overlay and requires externally supplied image digests, database credentials, and JWT key files. It publishes no host ports:
+From the repository root, build and start the local stack:
 
 ```sh
-docker compose -f compose.yml -f compose.prod.yml config
+docker compose --env-file .env.example -f compose.yml -f compose.local.yml up --build
 ```
 
-The public repository owns CI, release image publication, credential-free configuration checks, and disposable local acceptance. It does not deploy the host. Task 7 host deployment and observability assets are in the [portable prod-host-ops bundle](infra/prod-host-ops/README.md), including local-only validation, Tailscale workflow, image rollback, dashboards, and bounded metrics/log storage. The bundle is a template for the private operations repository; live Linux ownership/filesystem checks, Tailscale/SSH policy, deployment/rollback, public routing, and alert delivery remain separate operator acceptance.
+Open <http://localhost:8080>. The local overlay publishes only the Nginx entrypoint on loopback and creates reusable development JWT keys in a named volume.
 
-Cloudflare R2 infrastructure and publication are also separate credentialed operations. The bucket, CORS, custom domain, and disabled `r2.dev` endpoint have been applied, while the cache rule, media upload, and live CDN HIT/range/CORS verification remain pending. The [media runbook](docs/runbooks/cloudflare-r2-media.md) records the current cost model and must be checked against Cloudflare's current pricing before any approved publication.
+Stop the stack while retaining PostgreSQL data and local keys:
+
+```sh
+docker compose --env-file .env.example -f compose.yml -f compose.local.yml down
+```
+
+Add `--volumes` only when intentionally resetting local data and keys.
+
+## Configuration
+
+`.env.example` contains safe local defaults and is used directly by the commands above. For optional customization, copy it to `.env`, edit the copy, and use `--env-file .env`; `.env` is ignored by Git.
+
+| Variable | Purpose | Example default |
+| --- | --- | --- |
+| `POSTGRES_DB` | Local database name | `media_streaming` |
+| `POSTGRES_USER` | Local database user | `media_streaming` |
+| `POSTGRES_PASSWORD` | Local database password | `local-only-change-me` |
+| `PUBLIC_BASE_URL` | Browser-facing application URL | `http://localhost:8080` |
+| `MEDIA_BASE_URL` | Browser-facing media base URL | `http://localhost:8080/media` |
+| `SECURE_COOKIE` | Require HTTPS for refresh cookies | `false` for loopback HTTP |
+| `REFRESH_COOKIE_NAME` | Refresh cookie name | `refresh_token` |
+
+## Development and testing
+
+Run the offline repository/tooling tests:
+
+```sh
+python -m unittest discover -s scripts/tests -p "test_*.py" -v
+```
+
+Preview local acceptance without creating Docker resources:
+
+```sh
+python scripts/run_acceptance.py
+```
+
+Use `python scripts/run_acceptance.py --apply --quick` for a short local run or `python scripts/run_acceptance.py --apply` for the complete profile. See the [local acceptance runbook](docs/runbooks/local-acceptance.md) for backend, frontend, Compose, Nginx, and workflow checks. For frontend-only work, see the [frontend guide](frontend/README.md).
+
+## Repository scope
+
+This repository contains the LVFAST application, API contract, local media fixtures, tests, container images, CI, and local-development configuration. Deployment and hosting configuration intentionally live outside this repository.
+
+The demo is synthetic and resettable. It does not provide DRM, transcoding, billing, administration, or durable customer-data guarantees.
+
+## License
+
+Licensed under the [MIT License](LICENSE).
