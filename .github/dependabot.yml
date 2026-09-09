@@ -16,16 +16,6 @@ updates:
       frontend-dependencies:
         patterns: ["*"]
 
-  - package-ecosystem: npm
-    directory: /infra/cloudflare
-    schedule:
-      interval: weekly
-
-  - package-ecosystem: terraform
-    directory: /infra/cloudflare
-    schedule:
-      interval: weekly
-
   - package-ecosystem: docker
     directory: /backend
     schedule:

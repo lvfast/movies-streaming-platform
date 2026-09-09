@@ -2,11 +2,7 @@
 .worktrees/
 .idea/
 .vscode/
-.toolchains/
 .env
-**/stack.env
-infra/prod-host-ops/state/
-infra/prod-host-ops/secrets/
 *.pem
 *.key
 
@@ -17,11 +13,3 @@ coverage/
 artifacts/
 __pycache__/
 *.py[cod]
-
-infra/cloudflare/node_modules/
-.terraform/
-*.tfstate
-*.tfstate.*
-*.tfvars
-!*.tfvars.example
-crash.log

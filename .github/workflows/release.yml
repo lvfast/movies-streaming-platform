@@ -60,6 +60,7 @@ jobs:
           build-args: |
             APP_VERSION=${{ github.ref_name }}
             VCS_REF=${{ github.sha }}
+            VCS_URL=${{ github.server_url }}/${{ github.repository }}
           cache-from: type=gha,scope=${{ matrix.component }}
           cache-to: type=gha,mode=max,scope=${{ matrix.component }}
       - name: Attest image provenance
@@ -80,4 +81,3 @@ jobs:
           path: ${{ matrix.component }}-image.txt
           if-no-files-found: error
           retention-days: 90
-

@@ -3,7 +3,6 @@
 .idea
 .openai
 .superpowers
-.toolchains
 .vscode
 **/.DS_Store
 **/.env
@@ -12,6 +11,6 @@
 **/dist
 **/node_modules
 **/target
+artifacts
 coverage
 docs/handoff
-

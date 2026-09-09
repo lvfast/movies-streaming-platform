@@ -63,32 +63,12 @@ jobs:
     name: Configuration and workflow checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      POSTGRES_PASSWORD: ci-only-not-a-production-secret
-      GHCR_REPOSITORY: example/media-streaming-platform
-      BACKEND_IMAGE_DIGEST: 0000000000000000000000000000000000000000000000000000000000000000
-      FRONTEND_IMAGE_DIGEST: 0000000000000000000000000000000000000000000000000000000000000000
-      JWT_PRIVATE_KEY_FILE: /tmp/jwt-private.pem
-      JWT_PUBLIC_KEY_FILE: /tmp/jwt-public.pem
     steps:
       - uses: actions/checkout@v6
-      - uses: hashicorp/setup-terraform@v4
-        with:
-          terraform_version: 1.16.1
-      - name: Verify Task 6 assets offline
-        run: python scripts/verify_task6.py
-      - name: Test media release tooling
+      - name: Check repository policy and local tooling
         run: python -m unittest discover -s scripts/tests -p "test_*.py" -v
-      - name: Check Cloudflare Terraform formatting
-        run: terraform -chdir=infra/cloudflare fmt -check
-      - name: Initialize Cloudflare Terraform without a backend
-        run: terraform -chdir=infra/cloudflare init -backend=false -input=false
-      - name: Validate Cloudflare Terraform
-        run: terraform -chdir=infra/cloudflare validate
       - name: Render local Compose configuration
-        run: docker compose -f compose.yml -f compose.local.yml config --quiet
-      - name: Render production Compose configuration
-        run: docker compose -f compose.yml -f compose.prod.yml config --quiet
+        run: docker compose --env-file .env.example -f compose.yml -f compose.local.yml config --quiet
       - name: Validate Nginx configuration
         run: >-
           docker run --rm --add-host backend:127.0.0.1
@@ -119,7 +99,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: local-acceptance-evidence
-          path: artifacts/task8/**/*.json
+          path: artifacts/acceptance/**/*.json
           if-no-files-found: warn
           retention-days: 14
 
