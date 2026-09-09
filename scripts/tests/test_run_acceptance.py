@@ -1,6 +1,7 @@
 import sys
 import tempfile
 import unittest
+from inspect import signature
 from pathlib import Path
 from unittest.mock import patch
 
@@ -55,6 +56,7 @@ class AcceptanceRunnerTest(unittest.TestCase):
             runner.execute(apply=False, quick=False)
             run.assert_not_called()
         self.assertEqual(runner.DEFAULT_OUTPUT, runner.ROOT / "artifacts/acceptance")
+        self.assertIs(signature(runner.execute).parameters["output"].default, runner.DEFAULT_OUTPUT)
 
     def test_acceptance_public_constants(self):
         self.assertEqual("local-acceptance-", runner.PROJECT_PREFIX)
