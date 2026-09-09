@@ -27,7 +27,7 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -44,8 +44,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "22.22.2"
           cache: npm
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Check repository policy and local tooling
         run: python -m unittest discover -s scripts/tests -p "test_*.py" -v
       - name: Render local Compose configuration
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Run HTTP E2E and k6 on disposable local stack
         env:
           FULL_LOAD: ${{ github.event_name == 'workflow_dispatch' && inputs.full_load }}
@@ -96,7 +96,7 @@ jobs:
           fi
       - name: Upload aggregate acceptance evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: local-acceptance-evidence
           path: artifacts/acceptance/**/*.json
@@ -118,7 +118,7 @@ jobs:
             dockerfile: frontend/Dockerfile
             image: media-streaming-frontend:ci
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
       - name: Build image
         uses: docker/build-push-action@v7
