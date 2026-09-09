@@ -14,8 +14,8 @@ export default function () {
   requireThat(request('GET', '/search?q=starlight&page=0&size=5', 200).json().items.some(m => m.id === MOVIE), 'search finds movie');
   requireThat(request('GET', '/movies/starlight-archive', 200).json().id === MOVIE, 'details resolve slug');
   request('GET', '/me/watchlist', 401);
-  const invalid = request('GET', '/search?page=bad', 400, null, null, { headers: { 'X-Request-Id': 'task8-invalid-page' } });
-  requireThat(invalid.headers['Content-Type'].includes('application/problem+json') && invalid.json().requestId === 'task8-invalid-page', 'Problem Details preserves request ID');
+  const invalid = request('GET', '/search?page=bad', 400, null, null, { headers: { 'X-Request-Id': 'acceptance-invalid-page' } });
+  requireThat(invalid.headers['Content-Type'].includes('application/problem+json') && invalid.json().requestId === 'acceptance-invalid-page', 'Problem Details preserves request ID');
 
   const registered = request('POST', '/auth/register', 201, credentials);
   requireThat(Boolean(registered.cookies[cookie]?.[0]?.http_only), 'refresh cookie is HttpOnly');

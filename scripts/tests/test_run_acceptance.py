@@ -15,8 +15,8 @@ class AcceptanceRunnerTest(unittest.TestCase):
                 patch.object(runner.subprocess, "run") as cleanup:
             cleanup.return_value.returncode = 0
             with self.assertRaises(TimeoutError):
-                runner.run_container([], "task8-acceptance-1234567890-api", {})
-            self.assertEqual(["docker", "--context", "default", "rm", "-f", "task8-acceptance-1234567890-api"],
+                runner.run_container([], "local-acceptance-1234567890-api", {})
+            self.assertEqual(["docker", "--context", "default", "rm", "-f", "local-acceptance-1234567890-api"],
                              cleanup.call_args.args[0])
 
     def test_subprocess_output_is_decoded_as_utf8(self):
@@ -36,17 +36,29 @@ class AcceptanceRunnerTest(unittest.TestCase):
             "postgres": {"image": "postgres:17-alpine"},
         }, "networks": {"application": {"name": "existing"}, "edge": {}},
             "volumes": {"postgres-data": {"name": "existing"}}}
-        result = runner.isolate(model, "task8-acceptance-1234567890")
+        result = runner.isolate(model, "local-acceptance-1234567890")
         self.assertEqual({"postgres-data": {}}, result["volumes"])
         self.assertTrue(all(n == {"internal": True} for n in result["networks"].values()))
         self.assertNotIn("ports", result["services"]["frontend"])
         self.assertNotIn("build", result["services"]["backend"])
+        self.assertEqual("media-streaming-backend:acceptance", result["services"]["backend"]["image"])
+        self.assertEqual("media-streaming-frontend:acceptance", result["services"]["frontend"]["image"])
         self.assertIn("@sha256:", result["services"]["postgres"]["image"])
 
     def test_rejects_unsafe_project_before_cleanup_can_be_constructed(self):
-        for name in ("lvfast", "media-streaming-platform", "task8-acceptance-../", "task8-acceptance-"):
+        for name in ("lvfast", "media-streaming-platform", "local-acceptance-../", "local-acceptance-"):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 runner.check_project(name)
+
+    def test_default_output_is_under_acceptance_artifacts(self):
+        with patch.object(runner, "run") as run:
+            runner.execute(apply=False, quick=False)
+            run.assert_not_called()
+        self.assertEqual(runner.DEFAULT_OUTPUT, runner.ROOT / "artifacts/acceptance")
+
+    def test_acceptance_public_constants(self):
+        self.assertEqual("local-acceptance-", runner.PROJECT_PREFIX)
+        self.assertEqual("acceptance", runner.IMAGE_TAG)
 
     def test_cleanup_runs_on_failure_and_has_no_global_prune(self):
         commands = []

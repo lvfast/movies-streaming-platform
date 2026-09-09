@@ -10,6 +10,9 @@ import tempfile
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
+PROJECT_PREFIX = "local-acceptance-"
+IMAGE_TAG = "acceptance"
+DEFAULT_OUTPUT = ROOT / "artifacts/acceptance"
 K6_IMAGE = "grafana/k6:1.3.0@sha256:3ddc8b1a33a2c3d8edc6e99b6a762ae36cba08788463458f5e6a7703e14eb77d"
 DEPENDENCY_IMAGES = {
     "postgres": "postgres:17-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609",
@@ -26,12 +29,12 @@ def run(args, *, env=None, timeout=1800):
 
 
 def check_project(project):
-    if not re.fullmatch(r"task8-acceptance-[0-9a-f]{10}", project):
+    if not re.fullmatch(rf"{re.escape(PROJECT_PREFIX)}[0-9a-f]{{10}}", project):
         raise ValueError("Refusing a project outside the disposable acceptance namespace")
 
 
 def run_container(args, name, env):
-    if not re.fullmatch(r"task8-acceptance-[0-9a-f]{10}-(api|load)", name):
+    if not re.fullmatch(rf"{re.escape(PROJECT_PREFIX)}[0-9a-f]{{10}}-(api|load)", name):
         raise ValueError("Refusing a container outside the disposable acceptance namespace")
     try:
         return run(["docker", "--context", "default", "run", "--rm", "--name", name, *args], env=env)
@@ -53,7 +56,7 @@ def isolate(model, project):
         service.pop("build", None)
         service.pop("ports", None)
         if name in {"backend", "frontend"}:
-            service["image"] = f"media-streaming-{name}:task8"
+            service["image"] = f"media-streaming-{name}:{IMAGE_TAG}"
         elif name in DEPENDENCY_IMAGES:
             service["image"] = DEPENDENCY_IMAGES[name]
     return model
@@ -67,13 +70,13 @@ def run_stack(dc, tests):
         dc("down", "--volumes", "--remove-orphans")
 
 
-def execute(apply=False, quick=False, output=ROOT / "artifacts/task8"):
+def execute(apply=False, quick=False, output=DEFAULT_OUTPUT):
     if not apply:
         print("DRY-RUN: build current images -> fresh internal-only Compose project -> HTTP E2E -> "
               + ("2 VUs/15s (not acceptance)" if quick else "20 VUs/10m")
               + " -> remove only disposable project/volumes. No production connections.")
         return
-    project = "task8-acceptance-" + uuid.uuid4().hex[:10]
+    project = PROJECT_PREFIX + uuid.uuid4().hex[:10]
     check_project(project)
     output = output.resolve() / project
     output.mkdir(parents=True)
@@ -84,7 +87,7 @@ def execute(apply=False, quick=False, output=ROOT / "artifacts/task8"):
     for component in ("backend", "frontend"):
         print(f"Building {component} from current workspace", flush=True)
         run(["docker", "--context", "default", "build", "-f", str(ROOT / component / "Dockerfile"),
-             "-t", f"media-streaming-{component}:task8", str(ROOT)], env=env)
+             "-t", f"media-streaming-{component}:{IMAGE_TAG}", str(ROOT)], env=env)
     raw = run(["docker", "--context", "default", "compose", "--env-file", str(ROOT / ".env.example"),
                "-f", str(ROOT / "compose.yml"), "-f", str(ROOT / "compose.local.yml"), "config", "--format", "json"], env=env)
     model = isolate(json.loads(raw), project)
