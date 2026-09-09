@@ -1,0 +1,17 @@
+.git
+.github
+.idea
+.openai
+.superpowers
+.toolchains
+.vscode
+**/.DS_Store
+**/.env
+**/*.key
+**/*.pem
+**/dist
+**/node_modules
+**/target
+coverage
+docs/handoff
+

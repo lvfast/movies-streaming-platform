@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900" role="img" aria-labelledby="title description">
+  <title id="title">Movie poster placeholder</title>
+  <desc id="description">Abstract night sky artwork for catalog entries without dedicated poster art.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="1" stop-color="#312e81"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="900" fill="url(#sky)"/>
+  <circle cx="455" cy="190" r="110" fill="#f8fafc" opacity=".12"/>
+  <path d="M0 690 150 535l110 115 92-82 248 250v82H0Z" fill="#0f172a" opacity=".86"/>
+  <path d="M0 765 180 610l95 92 85-66 240 206v58H0Z" fill="#020617"/>
+  <text x="300" y="430" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="36" font-weight="700" text-anchor="middle">LVFAST CINEMA</text>
+  <text x="300" y="478" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="22" text-anchor="middle">Catalog artwork coming soon</text>
+</svg>

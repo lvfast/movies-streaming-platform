@@ -1,0 +1,308 @@
+openapi: 3.1.0
+info:
+  title: Media Streaming Platform API
+  version: 1.0.0
+  description: Public demo API. Accounts and viewing data may be reset.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Credentials'}
+      responses:
+        '201': {$ref: '#/components/responses/AuthResponse'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+        '429': {$ref: '#/components/responses/Problem'}
+        '503': {$ref: '#/components/responses/Problem'}
+  /auth/login:
+    post:
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Credentials'}
+      responses:
+        '200': {$ref: '#/components/responses/AuthResponse'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '429': {$ref: '#/components/responses/Problem'}
+        '503': {$ref: '#/components/responses/Problem'}
+  /auth/refresh:
+    post:
+      operationId: refresh
+      security: []
+      responses:
+        '200': {$ref: '#/components/responses/AuthResponse'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '429': {$ref: '#/components/responses/Problem'}
+        '503': {$ref: '#/components/responses/Problem'}
+  /auth/logout:
+    post:
+      operationId: logout
+      security: []
+      responses:
+        '204': {description: Logged out and refresh cookie cleared}
+  /auth/me:
+    get:
+      operationId: currentUser
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/User'}
+        '401': {$ref: '#/components/responses/Problem'}
+  /catalog/home:
+    get:
+      operationId: catalogHome
+      security: []
+      responses:
+        '200':
+          description: Curated home rails
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [rails]
+                properties:
+                  rails:
+                    type: array
+                    items: {$ref: '#/components/schemas/CatalogRail'}
+  /movies/{slug}:
+    get:
+      operationId: movieBySlug
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Movie details
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MovieDetails'}
+        '404': {$ref: '#/components/responses/Problem'}
+  /search:
+    get:
+      operationId: searchMovies
+      security: []
+      parameters:
+        - {name: q, in: query, required: true, schema: {type: string, minLength: 1, maxLength: 100}}
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MoviePage'}
+        '400': {$ref: '#/components/responses/Problem'}
+  /me/watchlist:
+    get:
+      operationId: watchlist
+      parameters:
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: User watchlist
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MoviePage'}
+        '401': {$ref: '#/components/responses/Problem'}
+  /me/watchlist/{movieId}:
+    put:
+      operationId: addToWatchlist
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+      responses:
+        '204': {description: Present in watchlist}
+        '401': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+    delete:
+      operationId: removeFromWatchlist
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+      responses:
+        '204': {description: Absent from watchlist}
+        '401': {$ref: '#/components/responses/Problem'}
+  /movies/{movieId}/playback:
+    get:
+      operationId: playback
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+      responses:
+        '200':
+          description: HLS playback metadata and resume position
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Playback'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+  /me/progress/{movieId}:
+    put:
+      operationId: updateProgress
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProgressUpdate'}
+      responses:
+        '200':
+          description: Stored progress
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Progress'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema: {type: integer, minimum: 0, default: 0}
+    Size:
+      name: size
+      in: query
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+    MovieId:
+      name: movieId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+  responses:
+    AuthResponse:
+      description: Access token returned; rotated refresh token is set as an HttpOnly cookie
+      headers:
+        Set-Cookie:
+          schema: {type: string}
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/AuthTokens'}
+    Problem:
+      description: RFC 9457 Problem Details with stable extensions
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+  schemas:
+    Credentials:
+      type: object
+      additionalProperties: false
+      required: [username, password]
+      properties:
+        username: {type: string, pattern: '^[A-Za-z0-9_]{3,32}$'}
+        password: {type: string, minLength: 12, maxLength: 128}
+    User:
+      type: object
+      required: [id, username]
+      properties:
+        id: {type: string, format: uuid}
+        username: {type: string}
+    AuthTokens:
+      type: object
+      required: [accessToken, tokenType, expiresIn, user]
+      properties:
+        accessToken: {type: string}
+        tokenType: {type: string, const: Bearer}
+        expiresIn: {type: integer, const: 900}
+        user: {$ref: '#/components/schemas/User'}
+    MovieSummary:
+      type: object
+      required: [id, slug, title, releaseYear, runtimeSeconds, maturityRating, posterUrl, backdropUrl, genres]
+      properties:
+        id: {type: string, format: uuid}
+        slug: {type: string}
+        title: {type: string}
+        releaseYear: {type: integer}
+        runtimeSeconds: {type: integer}
+        maturityRating: {type: string}
+        posterUrl: {type: string, format: uri-reference}
+        backdropUrl: {type: string, format: uri-reference}
+        genres: {type: array, items: {type: string}}
+    MovieDetails:
+      allOf:
+        - {$ref: '#/components/schemas/MovieSummary'}
+        - type: object
+          required: [synopsis, playable]
+          properties:
+            synopsis: {type: string}
+            playable: {type: boolean}
+    CatalogRail:
+      type: object
+      required: [key, title, items]
+      properties:
+        key: {type: string}
+        title: {type: string}
+        items: {type: array, items: {$ref: '#/components/schemas/MovieSummary'}}
+    MoviePage:
+      type: object
+      required: [items, page, size, total]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/MovieSummary'}}
+        page: {type: integer}
+        size: {type: integer}
+        total: {type: integer, format: int64}
+    Playback:
+      type: object
+      required: [movieId, manifestUrl, resumePositionSeconds]
+      properties:
+        movieId: {type: string, format: uuid}
+        manifestUrl: {type: string, format: uri-reference}
+        resumePositionSeconds: {type: integer, minimum: 0}
+    ProgressUpdate:
+      type: object
+      additionalProperties: false
+      required: [positionSeconds, durationSeconds, clientUpdatedAt]
+      properties:
+        positionSeconds: {type: integer, minimum: 0}
+        durationSeconds: {type: integer, minimum: 1}
+        clientUpdatedAt: {type: string, format: date-time}
+    Progress:
+      allOf:
+        - {$ref: '#/components/schemas/ProgressUpdate'}
+        - type: object
+          required: [movieId, completed]
+          properties:
+            movieId: {type: string, format: uuid}
+            completed: {type: boolean}
+    FieldError:
+      type: object
+      required: [field, code, message]
+      properties:
+        field: {type: string}
+        code: {type: string}
+        message: {type: string}
+    Problem:
+      type: object
+      required: [type, title, status, detail, requestId, code]
+      properties:
+        type: {type: string, format: uri-reference}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+        instance: {type: string, format: uri-reference}
+        requestId: {type: string}
+        code: {type: string}
+        fieldErrors:
+          type: array
+          items: {$ref: '#/components/schemas/FieldError'}

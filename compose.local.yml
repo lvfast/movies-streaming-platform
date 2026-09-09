@@ -1,0 +1,44 @@
+services:
+  jwt-keygen:
+    image: alpine/openssl:3.5.4
+    network_mode: none
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        if [ ! -s /keys/jwt-private.pem ]; then
+          umask 077
+          openssl genpkey -quiet -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /keys/jwt-private.pem
+        fi
+        if [ ! -s /keys/jwt-public.pem ]; then
+          openssl pkey -in /keys/jwt-private.pem -pubout -out /keys/jwt-public.pem
+        fi
+        chmod 0444 /keys/jwt-private.pem /keys/jwt-public.pem
+    volumes:
+      - jwt-keys:/keys
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: "no"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      jwt-keygen:
+        condition: service_completed_successfully
+    volumes:
+      - jwt-keys:/run/secrets:ro
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  jwt-keys:

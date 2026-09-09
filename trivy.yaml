@@ -1,0 +1,9 @@
+offline-scan: true
+
+scan:
+  skip-dirs:
+    - .git
+    - .toolchains
+    - frontend/node_modules
+    - frontend/dist
+    - backend/target
