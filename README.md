@@ -47,10 +47,11 @@ Add `--volumes` only when intentionally resetting local data and keys.
 | `POSTGRES_DB` | Local database name | `media_streaming` |
 | `POSTGRES_USER` | Local database user | `media_streaming` |
 | `POSTGRES_PASSWORD` | Local database password | `local-only-change-me` |
-| `PUBLIC_BASE_URL` | Browser-facing application URL | `http://localhost:8080` |
-| `MEDIA_BASE_URL` | Browser-facing media base URL | `http://localhost:8080/media` |
+| `MEDIA_BASE_URL` | Optional browser-facing media prefix; empty keeps stored `/media/...` references same-origin | empty |
 | `SECURE_COOKIE` | Require HTTPS for refresh cookies | `false` for loopback HTTP |
 | `REFRESH_COOKIE_NAME` | Refresh cookie name | `refresh_token` |
+
+`PUBLIC_BASE_URL` is not an application setting: the browser uses the origin from which it loaded the frontend. Set `MEDIA_BASE_URL` only when media is published separately, for example `https://media.example.test/library`; catalog artwork and playback manifests stored below `/media/` are then returned below that prefix.
 
 ## Development and testing
 

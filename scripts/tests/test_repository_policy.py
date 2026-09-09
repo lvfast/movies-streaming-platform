@@ -39,6 +39,20 @@ def tracked_files():
                 yield ROOT / path
 
 
+def banned_token_violations(paths):
+    violations = []
+    for path in paths:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        folded = text.casefold()
+        for banned in BANNED:
+            if banned.casefold() in folded:
+                violations.append(f"{path.relative_to(ROOT)}: {banned}")
+    return violations
+
+
 def markdown_target(raw_target):
     target = raw_target.strip()
     if target.startswith("<") and ">" in target:
@@ -65,17 +79,27 @@ def broken_markdown_links():
 
 class RepositoryPolicyTest(unittest.TestCase):
     def test_tracked_files_do_not_reference_inherited_repository_assets(self):
-        violations = []
-        for path in tracked_files():
-            try:
-                text = path.read_text(encoding="utf-8")
-            except UnicodeDecodeError:
-                continue
-            for banned in BANNED:
-                if banned in text:
-                    violations.append(f"{path.relative_to(ROOT)}: {banned}")
-
+        violations = banned_token_violations(tracked_files())
         self.assertEqual([], violations, "Banned repository coupling:\n" + "\n".join(violations))
+
+    def test_banned_token_scan_rejects_mixed_case_occurrences(self):
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            path = Path(directory) / "mixed-case.txt"
+            path.write_text("HTTPS://GITHUB.COM/LvFaSt/MeDiA-StReAmInG-PlAtFoRm", encoding="utf-8")
+
+            self.assertEqual(
+                [f"{path.relative_to(ROOT)}: github.com/lvfast/media-streaming-platform"],
+                banned_token_violations((path,)),
+            )
+
+    def test_nginx_proxy_replaces_untrusted_client_address_headers(self):
+        nginx = (ROOT / "frontend/nginx.conf").read_text(encoding="utf-8")
+        api_location = nginx.split("location /api/ {", maxsplit=1)[1].split("}", maxsplit=1)[0]
+
+        self.assertIn("proxy_set_header X-Forwarded-For $remote_addr;", api_location)
+        self.assertIn('proxy_set_header Forwarded "";', api_location)
+        self.assertIn('proxy_set_header X-Real-IP "";', api_location)
+        self.assertNotIn("$proxy_add_x_forwarded_for", api_location)
 
     def test_public_markdown_relative_links_exist(self):
         broken_links = broken_markdown_links()

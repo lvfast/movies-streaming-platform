@@ -1,6 +1,7 @@
 package com.lvfast.streaming.playback;
 
 import com.lvfast.streaming.catalog.MovieNotFoundException;
+import com.lvfast.streaming.common.MediaUrlResolver;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -9,9 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class PlaybackService {
     private final PlaybackRepository repository;
+    private final MediaUrlResolver mediaUrls;
 
-    PlaybackService(PlaybackRepository repository) {
+    PlaybackService(PlaybackRepository repository, MediaUrlResolver mediaUrls) {
         this.repository = repository;
+        this.mediaUrls = mediaUrls;
     }
 
     public Playback playback(UUID userId, UUID movieId) {
@@ -21,7 +24,7 @@ public class PlaybackService {
                 .filter(progress -> !progress.completed())
                 .map(ViewingProgress::positionSeconds)
                 .orElse(0);
-        return new Playback(movie.id(), movie.manifestUrl(), resumePosition);
+        return new Playback(movie.id(), mediaUrls.resolve(movie.manifestUrl()), resumePosition);
     }
 
     @Transactional

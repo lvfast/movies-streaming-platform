@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 import com.lvfast.streaming.catalog.MovieNotFoundException;
+import com.lvfast.streaming.common.MediaUrlResolver;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,7 +27,7 @@ class PlaybackServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PlaybackService(repository);
+        service = new PlaybackService(repository, new MediaUrlResolver(""));
     }
 
     @Test
@@ -41,6 +42,18 @@ class PlaybackServiceTest {
 
         assertThat(result.manifestUrl()).isEqualTo("/media/movie/index.m3u8");
         assertThat(result.resumePositionSeconds()).isEqualTo(45);
+    }
+
+    @Test
+    void playbackResolvesRelativeManifestAgainstConfiguredMediaBase() {
+        when(repository.playableMovie(MOVIE_ID))
+                .thenReturn(Optional.of(new PlayableMovie(MOVIE_ID, "/media/movie/index.m3u8")));
+        when(repository.progress(USER_ID, MOVIE_ID)).thenReturn(Optional.empty());
+        PlaybackService externallyHosted = new PlaybackService(
+                repository, new MediaUrlResolver("https://media.example.test/library"));
+
+        assertThat(externallyHosted.playback(USER_ID, MOVIE_ID).manifestUrl())
+                .isEqualTo("https://media.example.test/library/movie/index.m3u8");
     }
 
     @Test

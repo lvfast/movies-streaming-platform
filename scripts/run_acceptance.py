@@ -82,8 +82,8 @@ def execute(apply=False, quick=False, output=DEFAULT_OUTPUT):
     output.mkdir(parents=True)
     env = {k: v for k, v in os.environ.items() if k.upper() in {
         "PATH", "HOME", "USERPROFILE", "SYSTEMROOT", "TEMP", "TMP", "PROGRAMDATA", "PROGRAMFILES", "DOCKER_CONFIG"}}
-    env.update(POSTGRES_PASSWORD="acceptance-local-only", PUBLIC_BASE_URL="http://frontend:8080",
-               MEDIA_BASE_URL="http://frontend:8080/media", SECURE_COOKIE="false", REFRESH_COOKIE_NAME="refresh_token")
+    env.update(POSTGRES_PASSWORD="acceptance-local-only", MEDIA_BASE_URL="",
+               SECURE_COOKIE="false", REFRESH_COOKIE_NAME="refresh_token")
     for component in ("backend", "frontend"):
         print(f"Building {component} from current workspace", flush=True)
         run(["docker", "--context", "default", "build", "-f", str(ROOT / component / "Dockerfile"),

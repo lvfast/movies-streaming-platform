@@ -68,8 +68,7 @@ services:
       REDIS_PORT: 6379
       JWT_PRIVATE_KEY: file:/run/secrets/jwt-private.pem
       JWT_PUBLIC_KEY: file:/run/secrets/jwt-public.pem
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
-      MEDIA_BASE_URL: ${MEDIA_BASE_URL:-http://localhost:8080/media}
+      MEDIA_BASE_URL: ${MEDIA_BASE_URL:-}
       SECURE_COOKIE: ${SECURE_COOKIE:-false}
       REFRESH_COOKIE_NAME: ${REFRESH_COOKIE_NAME:-refresh_token}
     depends_on:

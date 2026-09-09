@@ -54,6 +54,7 @@ Watchlist writes are idempotent. Progress updates validate position and duration
 - Local loopback HTTP uses a non-`Secure` `refresh_token` cookie. Secure deployments can supply their own cookie and URL settings through runtime configuration.
 - Registration, login, and refresh are rate limited through Redis. If Redis is unavailable, these actions fail closed; catalog reads bypass a failed cache.
 - Nginx adds content-security, frame, content-type, referrer, and permissions headers. API requests and local media stay same-origin in the Compose runtime.
+- Nginx replaces `X-Forwarded-For` with its direct peer address and removes inbound `Forwarded` and `X-Real-IP` before proxying. Spring can therefore apply forwarded-header handling without allowing a client to select the IP used by authentication rate-limit buckets.
 - Application containers use dropped capabilities, `no-new-privileges`, constrained resources, and read-only filesystems where practical. The PostgreSQL image briefly retains the capabilities needed to repair volume ownership before dropping to its service user.
 - PostgreSQL failure makes backend readiness fail. Request IDs are returned with API problems and included in structured backend logs.
 
@@ -64,3 +65,9 @@ Watchlist writes are idempotent. Progress updates validate position and duration
 - The bounded load profile characterizes one local machine and fixture dataset; it is not a capacity study or service-level objective.
 - The application has no DRM, transcoding, upload/admin workflow, profiles, series, recommendations, ratings, email, billing, or customer-data recovery.
 - Deployment, hosting, external media publication, and live-environment validation are outside this repository.
+
+## External media host contract
+
+The default `MEDIA_BASE_URL` is empty, so catalog artwork and HLS manifest references remain same-origin `/media/...` paths. A deployment may set it to an absolute media prefix such as `https://media.example.test/library`; the backend then replaces the stored `/media` prefix when producing catalog and playback responses. Absolute URLs already present in a catalog are left unchanged.
+
+An external media origin also requires one infrastructure-side substitution in the Nginx Content-Security-Policy header. In the existing `add_header Content-Security-Policy` value, append the exact external origin (scheme and host, without a path) to all three directives: `img-src`, `media-src`, and `connect-src`. For `MEDIA_BASE_URL=https://media.example.test/library`, the resulting directives are `img-src 'self' data: https://media.example.test`, `media-src 'self' blob: https://media.example.test`, and `connect-src 'self' https://media.example.test`. Keep every other directive unchanged. This substitution belongs to the separate deployment configuration because this repository intentionally makes no hosting-provider assumption.

@@ -59,8 +59,7 @@ management:
         http.server.requests: true
 
 app:
-  public-base-url: ${PUBLIC_BASE_URL:http://localhost:8080}
-  media-base-url: ${MEDIA_BASE_URL:http://localhost:8081/media}
+  media-base-url: ${MEDIA_BASE_URL:}
   auth:
     enabled: ${AUTH_ENABLED:true}
     issuer: ${JWT_ISSUER:http://localhost:8080}
