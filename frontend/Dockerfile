@@ -14,10 +14,11 @@ RUN npm run build
 FROM nginx:1.28-alpine AS runtime
 ARG APP_VERSION=dev
 ARG VCS_REF=unknown
+ARG VCS_URL=""
 LABEL org.opencontainers.image.title="LVFAST media streaming frontend" \
       org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.source="https://github.com/lvfast/media-streaming-platform"
+      org.opencontainers.image.source="${VCS_URL}"
 
 RUN apk del --no-cache \
         nginx-module-acme \

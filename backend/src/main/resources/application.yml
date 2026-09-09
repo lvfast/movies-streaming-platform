@@ -63,7 +63,7 @@ app:
   media-base-url: ${MEDIA_BASE_URL:http://localhost:8081/media}
   auth:
     enabled: ${AUTH_ENABLED:true}
-    issuer: ${JWT_ISSUER:https://stream.lvfast.site}
+    issuer: ${JWT_ISSUER:http://localhost:8080}
     access-token-ttl: PT15M
     refresh-token-ttl: P7D
     private-key-location: ${JWT_PRIVATE_KEY:file:/run/secrets/jwt-private.pem}

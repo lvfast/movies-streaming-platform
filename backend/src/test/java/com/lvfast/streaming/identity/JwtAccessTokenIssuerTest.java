@@ -30,7 +30,7 @@ class JwtAccessTokenIssuerTest {
         RSAPrivateKey privateKey = (RSAPrivateKey) pair.getPrivate();
         RSAKey jwk = new RSAKey.Builder(publicKey).privateKey(privateKey).build();
         NimbusJwtEncoder encoder = new NimbusJwtEncoder(new ImmutableJWKSet<>(new JWKSet(jwk)));
-        JwtAccessTokenIssuer issuer = new JwtAccessTokenIssuer(encoder, "https://stream.lvfast.site");
+        JwtAccessTokenIssuer issuer = new JwtAccessTokenIssuer(encoder, "https://issuer.example");
         UserAccount user = UserAccount.register("demo", "hash", Instant.parse("2026-09-06T00:00:00Z"));
         Instant issuedAt = Instant.now().minusSeconds(1).truncatedTo(ChronoUnit.SECONDS);
 
@@ -41,7 +41,7 @@ class JwtAccessTokenIssuerTest {
                 .build();
         Jwt jwt = decoder.decode(encoded);
         assertThat(jwt.getSubject()).isEqualTo(user.id().toString());
-        assertThat(jwt.getIssuer().toString()).isEqualTo("https://stream.lvfast.site");
+        assertThat(jwt.getIssuer().toString()).isEqualTo("https://issuer.example");
         assertThat(jwt.getClaimAsString("username")).isEqualTo("demo");
         assertThat(jwt.getIssuedAt()).isEqualTo(issuedAt);
         assertThat(jwt.getExpiresAt()).isEqualTo(issuedAt.plus(Duration.ofMinutes(15)));

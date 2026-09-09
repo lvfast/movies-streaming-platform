@@ -14,10 +14,11 @@ RUN --mount=type=cache,target=/root/.m2 \
 FROM eclipse-temurin:21-jre-alpine AS runtime
 ARG APP_VERSION=dev
 ARG VCS_REF=unknown
+ARG VCS_URL=""
 LABEL org.opencontainers.image.title="LVFAST media streaming backend" \
       org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.source="https://github.com/lvfast/media-streaming-platform"
+      org.opencontainers.image.source="${VCS_URL}"
 
 RUN apk upgrade --no-cache \
     && apk add --no-cache curl \

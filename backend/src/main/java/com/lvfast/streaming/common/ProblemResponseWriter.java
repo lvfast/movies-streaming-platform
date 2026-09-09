@@ -23,7 +23,7 @@ public final class ProblemResponseWriter {
         response.setCharacterEncoding("UTF-8");
         response.setHeader(RequestIdFilter.REQUEST_ID_HEADER, requestId);
         response.getWriter().write("{"
-                + "\"type\":\"https://stream.lvfast.site/problems/" + code.toLowerCase().replace('_', '-') + "\","
+                + "\"type\":\"urn:lvfast:problem:" + code.toLowerCase().replace('_', '-') + "\","
                 + "\"title\":\"" + title(status) + "\","
                 + "\"status\":" + status + ","
                 + "\"detail\":\"" + detail + "\","

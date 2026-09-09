@@ -131,7 +131,8 @@ public class ApiExceptionHandler {
             HttpStatus status, String code, String detail, HttpServletRequest request) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setTitle(status.getReasonPhrase());
-        problem.setType(URI.create("https://stream.lvfast.site/problems/" + code.toLowerCase().replace('_', '-')));
+        String typeCode = "VALIDATION_FAILED".equals(code) ? "VALIDATION_ERROR" : code;
+        problem.setType(URI.create("urn:lvfast:problem:" + typeCode.toLowerCase().replace('_', '-')));
         String requestUri = request.getRequestURI();
         if (requestUri != null && !requestUri.isBlank()) {
             problem.setInstance(URI.create(requestUri));
