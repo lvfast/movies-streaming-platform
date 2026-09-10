@@ -37,6 +37,20 @@ describe('App integration shell', () => {
     expect(screen.getByRole('contentinfo')).toHaveTextContent('Use a unique password and avoid personal information.');
   });
 
+  it('asks a guest to sign in when saving from a movie preview', async () => {
+    const api = createApi();
+    renderApp(api, '/browse');
+
+    await screen.findByRole('heading', { level: 1, name: 'Starlight Archive' });
+    fireEvent.pointerEnter(screen.getByRole('article'));
+    const preview = await screen.findByRole('dialog', { name: 'Starlight Archive' });
+    fireEvent.click(within(preview).getByRole('button', { name: /add starlight archive to my list/i }));
+
+    expect(await screen.findByRole('dialog', { name: /welcome back/i })).toBeVisible();
+    expect(screen.queryByRole('dialog', { name: 'Starlight Archive' })).not.toBeInTheDocument();
+    expect(api.addToWatchlist).not.toHaveBeenCalled();
+  });
+
   it('signs in and keeps the authenticated identity in the shell', async () => {
     const api = createApi();
     const actor = userEvent.setup();
