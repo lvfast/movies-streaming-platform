@@ -24,7 +24,7 @@ export function Header() {
 
   return (
     <header className="site-header">
-      <Link className="brand" to="/" aria-label="LVFAST Cinema home">
+      <Link className="brand" to="/browse" aria-label="LVFAST Cinema home">
         LVFAST<span>CINEMA</span>
       </Link>
       <button
@@ -37,7 +37,7 @@ export function Header() {
         {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
       </button>
       <nav className={menuOpen ? 'site-nav site-nav--open' : 'site-nav'} aria-label="Primary navigation">
-        <NavLink to="/">Home</NavLink>
+        <NavLink to="/browse">Home</NavLink>
         {status === 'authenticated' ? <NavLink to="/my-list">My list</NavLink> : null}
       </nav>
       <div className="site-header__actions">

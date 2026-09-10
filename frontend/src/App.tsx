@@ -6,6 +6,7 @@ import { LoadingState } from './components/feedback';
 import { Header } from './components/header';
 import { DetailsPage } from './pages/details-page';
 import { HomePage } from './pages/home-page';
+import { LandingPage } from './pages/landing-page';
 import { SearchPage } from './pages/search-page';
 import { WatchlistPage } from './pages/watchlist-page';
 import { SessionProvider } from './session/session-context';
@@ -26,12 +27,14 @@ export function App() {
 function AppRoutes() {
   const location = useLocation();
   const playerRoute = location.pathname.startsWith('/watch/');
+  const landingRoute = location.pathname === '/';
 
   return (
     <div className="app-shell">
-      {!playerRoute ? <Header /> : null}
+      {!playerRoute && !landingRoute ? <Header /> : null}
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/browse" element={<HomePage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/my-list" element={<WatchlistPage />} />
         <Route path="/title/:slug" element={<DetailsPage />} />

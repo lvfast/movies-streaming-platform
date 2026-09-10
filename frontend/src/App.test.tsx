@@ -18,11 +18,20 @@ function renderApp(api = createApi(), route = '/') {
 }
 
 describe('App integration shell', () => {
-  it('shows the catalog hero and rails to guests', async () => {
-    renderApp();
+  it('introduces the cinema before entering the catalog', () => {
+    renderApp(createApi(), '/');
+
+    expect(screen.getByRole('heading', { level: 1, name: /stories worth staying for/i })).toBeVisible();
+    expect(screen.getByRole('link', { name: /browse movies/i })).toHaveAttribute('href', '/browse');
+    expect(screen.queryByRole('navigation', { name: /primary navigation/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the catalog hero and rails to guests at the browse route', async () => {
+    renderApp(createApi(), '/browse');
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Starlight Archive' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Featured tonight' })).toBeVisible();
+    expect(screen.getByRole('navigation', { name: /primary navigation/i })).toBeVisible();
     expect(screen.getByRole('button', { name: /^sign in$/i })).toBeVisible();
     expect(screen.getByRole('contentinfo')).toHaveTextContent('Accounts and viewing history may be reset.');
     expect(screen.getByRole('contentinfo')).toHaveTextContent('Use a unique password and avoid personal information.');
@@ -31,7 +40,7 @@ describe('App integration shell', () => {
   it('signs in and keeps the authenticated identity in the shell', async () => {
     const api = createApi();
     const actor = userEvent.setup();
-    renderApp(api);
+    renderApp(api, '/browse');
 
     await screen.findByRole('heading', { level: 1, name: 'Starlight Archive' });
     await actor.click(screen.getByRole('button', { name: /^sign in$/i }));
@@ -51,7 +60,7 @@ describe('App integration shell', () => {
   it('creates a demo account from the same auth dialog', async () => {
     const api = createApi();
     const actor = userEvent.setup();
-    renderApp(api);
+    renderApp(api, '/browse');
 
     await screen.findByRole('heading', { level: 1, name: 'Starlight Archive' });
     await actor.click(screen.getByRole('button', { name: /^sign in$/i }));
@@ -80,7 +89,7 @@ describe('App integration shell', () => {
       })),
     });
     const actor = userEvent.setup();
-    renderApp(api);
+    renderApp(api, '/browse');
 
     await screen.findByRole('heading', { level: 1, name: 'Starlight Archive' });
     await actor.click(screen.getByRole('button', { name: /^sign in$/i }));
@@ -96,7 +105,7 @@ describe('App integration shell', () => {
   it('searches the catalog from the global navigation', async () => {
     const api = createApi();
     const actor = userEvent.setup();
-    renderApp(api);
+    renderApp(api, '/browse');
 
     await screen.findByRole('heading', { level: 1, name: 'Starlight Archive' });
     await actor.click(screen.getByRole('button', { name: /search/i }));
