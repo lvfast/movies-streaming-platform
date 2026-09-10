@@ -36,6 +36,17 @@ describe('MovieRail', () => {
     expect(rail).toHaveClass('movie-rail--featured');
   });
 
+  it('does not render an information icon overlay on the movie poster', () => {
+    render(
+      <MemoryRouter>
+        <MovieRail title="Featured" movies={[featuredMovie]} />
+      </MemoryRouter>,
+    );
+
+    const posterLink = screen.getByRole('link', { name: `More information about ${featuredMovie.title}` });
+    expect(posterLink.querySelector('.movie-card__info')).not.toBeInTheDocument();
+  });
+
   it('scrolls every rail horizontally when it is dragged', () => {
     render(
       <MemoryRouter>
@@ -114,6 +125,34 @@ describe('MovieRail', () => {
     expect(screen.getByRole('dialog', { name: featuredMovie.title })).toBeVisible();
     expect(screen.getByText(playableMovie.synopsis)).toBeVisible();
     expect(loadDetails).toHaveBeenCalledOnce();
+  });
+
+  it('animates the movie preview out before removing it when the page scrolls', async () => {
+    vi.useFakeTimers();
+    render(
+      <MemoryRouter>
+        <MovieRail
+          movies={[featuredMovie]}
+          preview={{ loadDetails: vi.fn().mockResolvedValue(playableMovie) }}
+          title="Featured"
+        />
+      </MemoryRouter>,
+    );
+
+    fireEvent.pointerEnter(screen.getByRole('article'));
+    await act(async () => vi.advanceTimersByTimeAsync(350));
+    expect(screen.getByRole('dialog', { name: featuredMovie.title })).toBeVisible();
+
+    fireEvent.scroll(window);
+
+    expect(screen.queryByRole('dialog', { name: featuredMovie.title })).not.toBeInTheDocument();
+    expect(document.querySelector('.movie-preview--closing')).toBeInTheDocument();
+
+    act(() => vi.advanceTimersByTime(179));
+    expect(document.querySelector('.movie-preview--closing')).toBeInTheDocument();
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.queryByRole('dialog', { name: featuredMovie.title })).not.toBeInTheDocument();
   });
 
   it('exposes play, watchlist, and details actions from the preview', async () => {

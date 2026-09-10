@@ -33,7 +33,6 @@ export function MovieCard({ movie, action, onAction, busy = false, onPreviewEnte
           }}
           src={movie.posterUrl}
         />
-        <span className="movie-card__info"><Info aria-hidden="true" size={18} /></span>
       </Link>
       <div className="movie-card__body">
         <div>
@@ -77,8 +76,10 @@ export function MovieRail({ title, movies, variant = 'default', preview }: Movie
   const queuedScroll = useRef<{ element: HTMLDivElement; left: number } | null>(null);
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewRequest = useRef(0);
   const [dragging, setDragging] = useState(false);
+  const [previewClosing, setPreviewClosing] = useState(false);
   const [previewCard, setPreviewCard] = useState<{
     movie: MovieSummary;
     details: MovieDetails | null;
@@ -126,14 +127,21 @@ export function MovieRail({ title, movies, variant = 'default', preview }: Movie
   const clearPreviewTimers = () => {
     if (openTimer.current) clearTimeout(openTimer.current);
     if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (exitTimer.current) clearTimeout(exitTimer.current);
     openTimer.current = null;
     closeTimer.current = null;
+    exitTimer.current = null;
   };
 
   const closePreview = () => {
     clearPreviewTimers();
     previewRequest.current += 1;
-    setPreviewCard(null);
+    setPreviewClosing(true);
+    exitTimer.current = setTimeout(() => {
+      setPreviewCard(null);
+      setPreviewClosing(false);
+      exitTimer.current = null;
+    }, 180);
   };
 
   const schedulePreview = (movie: MovieSummary, element: HTMLElement) => {
@@ -143,6 +151,7 @@ export function MovieRail({ title, movies, variant = 'default', preview }: Movie
     openTimer.current = setTimeout(() => {
       const request = previewRequest.current + 1;
       previewRequest.current = request;
+      setPreviewClosing(false);
       setPreviewCard({ movie, details: null, rect: element.getBoundingClientRect() });
       void preview.loadDetails(movie).then((details) => {
         if (previewRequest.current !== request) return;
@@ -157,9 +166,14 @@ export function MovieRail({ title, movies, variant = 'default', preview }: Movie
     closeTimer.current = setTimeout(closePreview, 150);
   };
 
-  useEffect(() => () => {
-    stopAnimation();
-    clearPreviewTimers();
+  useEffect(() => {
+    window.addEventListener('scroll', closePreview, true);
+
+    return () => {
+      window.removeEventListener('scroll', closePreview, true);
+      stopAnimation();
+      clearPreviewTimers();
+    };
   }, []);
 
   return (
@@ -244,8 +258,9 @@ export function MovieRail({ title, movies, variant = 'default', preview }: Movie
       </div>
       {previewCard ? createPortal(
         <aside
+          aria-hidden={previewClosing}
           aria-label={previewCard.movie.title}
-          className="movie-preview"
+          className={`movie-preview${previewClosing ? ' movie-preview--closing' : ''}`}
           onPointerEnter={clearPreviewTimers}
           onPointerLeave={schedulePreviewClose}
           role="dialog"
