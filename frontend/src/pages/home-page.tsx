@@ -1,8 +1,8 @@
 import { Info, Play } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../api/api-context';
-import type { CatalogHome, MovieSummary } from '../api/streaming-api';
+import type { CatalogHome, MovieDetails, MovieSummary } from '../api/streaming-api';
 import { ErrorState, LoadingState } from '../components/feedback';
 import { MovieRail } from '../components/movie-card';
 import { useSession } from '../session/session-context';
@@ -17,6 +17,9 @@ export function HomePage() {
   const [error, setError] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
   const [startingMovie, setStartingMovie] = useState(false);
+  const [savedMovieIds, setSavedMovieIds] = useState<Set<string>>(new Set());
+  const [watchlistBusyId, setWatchlistBusyId] = useState<string | null>(null);
+  const detailRequests = useRef(new Map<string, Promise<MovieDetails>>());
 
   useEffect(() => {
     let active = true;
@@ -29,6 +32,41 @@ export function HomePage() {
     };
   }, [api, attempt]);
 
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      setSavedMovieIds(new Set());
+      return;
+    }
+    let active = true;
+    api.watchlist(0, 100)
+      .then((page) => {
+        if (active) setSavedMovieIds(new Set(page.items.map((movie) => movie.id)));
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [api, status]);
+
+  const loadDetails = useCallback((movie: MovieSummary) => {
+    const cached = detailRequests.current.get(movie.id);
+    if (cached) return cached;
+    const request = api.movieBySlug(movie.slug).catch((caught) => {
+      detailRequests.current.delete(movie.id);
+      throw caught;
+    });
+    detailRequests.current.set(movie.id, request);
+    return request;
+  }, [api]);
+
+  const playDetails = useCallback((movie: MovieDetails) => {
+    if (status !== 'authenticated') {
+      openAuth('login');
+      return;
+    }
+    if (movie.playable) navigate(`/watch/${movie.id}`);
+  }, [navigate, openAuth, status]);
+
   const startMovie = useCallback(async (movie: MovieSummary) => {
     if (status !== 'authenticated') {
       openAuth('login');
@@ -36,14 +74,37 @@ export function HomePage() {
     }
     setStartingMovie(true);
     try {
-      const details = await api.movieBySlug(movie.slug);
+      const details = await loadDetails(movie);
       navigate(details.playable ? `/watch/${details.id}` : `/title/${details.slug}`);
     } catch (caught) {
       setError(caught);
     } finally {
       setStartingMovie(false);
     }
-  }, [api, navigate, openAuth, status]);
+  }, [loadDetails, navigate, openAuth, status]);
+
+  const toggleWatchlist = useCallback(async (movie: MovieSummary) => {
+    if (status !== 'authenticated') {
+      openAuth('login');
+      return;
+    }
+    const saved = savedMovieIds.has(movie.id);
+    setWatchlistBusyId(movie.id);
+    try {
+      if (saved) await api.removeFromWatchlist(movie.id);
+      else await api.addToWatchlist(movie.id);
+      setSavedMovieIds((current) => {
+        const next = new Set(current);
+        if (saved) next.delete(movie.id);
+        else next.add(movie.id);
+        return next;
+      });
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      setWatchlistBusyId(null);
+    }
+  }, [api, openAuth, savedMovieIds, status]);
 
   if (error && !catalog) return <main className="page page--center"><ErrorState error={error} onRetry={() => setAttempt((value) => value + 1)} /></main>;
   if (!catalog) return <main className="page page--center"><LoadingState label="Curating tonight’s catalog" /></main>;
@@ -89,7 +150,19 @@ export function HomePage() {
       </section>
       <div className="catalog-rails">
         {catalog.rails.map((rail) => (
-          <MovieRail key={rail.key} title={rail.title} movies={rail.items} />
+          <MovieRail
+            key={rail.key}
+            title={rail.title}
+            movies={rail.items}
+            preview={{
+              busyMovieId: watchlistBusyId,
+              loadDetails,
+              onPlay: playDetails,
+              onToggleWatchlist: (movie) => void toggleWatchlist(movie),
+              savedMovieIds,
+            }}
+            variant={rail.key === 'featured' ? 'featured' : 'default'}
+          />
         ))}
       </div>
       <footer className="site-footer">
