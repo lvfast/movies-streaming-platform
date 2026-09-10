@@ -355,13 +355,16 @@ video {
 }
 
 .movie-rail__track {
+  --movie-rail-inline-padding: clamp(1rem, 4vw, 4.25rem);
   display: grid;
   gap: clamp(0.55rem, 1vw, 0.9rem);
   grid-auto-columns: clamp(180px, 18vw, 270px);
   grid-auto-flow: column;
   overflow-x: auto;
-  padding: 0.75rem clamp(1rem, 4vw, 4.25rem) 1.5rem;
+  padding-block: 0.75rem 1.5rem;
+  padding-inline: var(--movie-rail-inline-padding);
   scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scroll-padding-inline: var(--movie-rail-inline-padding);
   scroll-snap-type: x proximity;
 }
 
