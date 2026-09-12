@@ -2,7 +2,7 @@
 
 Date: 2026-09-10  
 Revised: 2026-09-12  
-Status: approved design direction; implementation plan will be replaced with an MVP-oriented packet plan.
+Status: approved MVP design and eight-packet implementation baseline; application work has not started.
 
 ## Purpose
 
@@ -97,7 +97,7 @@ Use additive Flyway migrations; never edit the applied V1 migration. Exact migra
 
 The MVP needs these records:
 
-- `user_role` and `audit_event`.
+- `user_role`, `audit_event` and a small `operation_request` replay table for the commands that require idempotency keys.
 - Movie management mode, lifecycle, revision, first-published timestamp, active media version, poster asset, backdrop asset and a singleton catalog revision.
 - `media_version`, `media_asset` and `upload_session`.
 - `media_job`, `media_job_attempt`, `outbox_event` and `inbox_event`.
