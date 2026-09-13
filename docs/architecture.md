@@ -71,3 +71,21 @@ Watchlist writes are idempotent. Progress updates validate position and duration
 The default `MEDIA_BASE_URL` is empty, so catalog artwork and HLS manifest references remain same-origin `/media/...` paths. A deployment may set it to an absolute media prefix such as `https://media.example.test/library`; the backend then replaces the stored `/media` prefix when producing catalog and playback responses. Absolute URLs already present in a catalog are left unchanged.
 
 An external media origin also requires one infrastructure-side substitution in the Nginx Content-Security-Policy header. In the existing `add_header Content-Security-Policy` value, append the exact external origin (scheme and host, without a path) to all three directives: `img-src`, `media-src`, and `connect-src`. For `MEDIA_BASE_URL=https://media.example.test/library`, the resulting directives are `img-src 'self' data: https://media.example.test`, `media-src 'self' blob: https://media.example.test`, and `connect-src 'self' https://media.example.test`. Keep every other directive unchanged. This substitution belongs to the separate deployment configuration because this repository intentionally makes no hosting-provider assumption.
+
+## Managed playback origin
+
+Protected playback (`/watch/{movieId}`) is a second, narrower case of the same contract: the media
+gateway is a different origin from the web app, and only that origin may receive the short-lived
+media bearer token.
+
+- The frontend image is built with `VITE_MEDIA_BASE_URL` set to the gateway origin. The bundle uses
+  it both to scope the `Authorization` header (a request to any other origin never gets the token)
+  and to resolve the backend's root-relative `/hls/...` manifest path onto the gateway. Without it,
+  managed playback reports a configuration error instead of issuing an unauthenticated request
+  against the API origin.
+- `frontend/nginx.conf.template` carries `connect-src 'self' ${MEDIA_ORIGIN}`. The image's own
+  entrypoint renders the template at container start, so `MEDIA_ORIGIN` must be the same gateway
+  origin; leaving it unset renders an empty value and keeps the strict same-origin policy.
+
+Both values default to empty in `.env.example`, which is the correct configuration for a stack whose
+media is not served from a separate origin.

@@ -145,11 +145,43 @@ paths:
         - {$ref: '#/components/parameters/MovieId'}
       responses:
         '200':
-          description: HLS playback metadata and resume position
+          description: >-
+            Managed movies answer a version-pinned grant with a short-lived media token; legacy
+            fixtures keep the manifest/resume response and omit the managed fields.
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/Playback'}
+              schema:
+                anyOf:
+                  - {$ref: '#/components/schemas/ManagedPlayback'}
+                  - {$ref: '#/components/schemas/Playback'}
         '401': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+  /me/playback-sessions/{sessionId}/token:
+    post:
+      operationId: refreshMediaToken
+      parameters:
+        - {$ref: '#/components/parameters/SessionId'}
+      responses:
+        '200':
+          description: Refreshed media token for an unexpired session of a published movie
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MediaToken'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+  /admin/playback-sessions/{sessionId}/token:
+    post:
+      operationId: refreshPreviewMediaToken
+      parameters:
+        - {$ref: '#/components/parameters/SessionId'}
+      responses:
+        '200':
+          description: Refreshed media token for the current ADMIN preview session
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MediaToken'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
         '404': {$ref: '#/components/responses/Problem'}
   /me/progress/{movieId}:
     put:
@@ -170,6 +202,491 @@ paths:
         '400': {$ref: '#/components/responses/Problem'}
         '401': {$ref: '#/components/responses/Problem'}
         '404': {$ref: '#/components/responses/Problem'}
+  /admin/movies:
+    get:
+      operationId: adminListMovies
+      parameters:
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Managed and legacy movie page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMoviePage'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+    post:
+      operationId: adminCreateMovie
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: {type: string, maxLength: 200}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MovieInput'}
+      responses:
+        '201':
+          description: Created draft
+          headers:
+            ETag: {schema: {type: string}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMovie'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+  /admin/movies/{movieId}:
+    get:
+      operationId: adminGetMovie
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+      responses:
+        '200':
+          description: Movie with revision
+          headers:
+            ETag: {schema: {type: string}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMovie'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+    put:
+      operationId: adminUpdateMovie
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+        - name: If-Match
+          in: header
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MovieInput'}
+      responses:
+        '200':
+          description: Updated movie
+          headers:
+            ETag: {schema: {type: string}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMovie'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '412': {$ref: '#/components/responses/Problem'}
+        '428': {$ref: '#/components/responses/Problem'}
+  /admin/genres:
+    get:
+      operationId: adminListGenres
+      responses:
+        '200':
+          description: Available genres
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/GenreOption'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+  /admin/movies/{movieId}/uploads:
+    post:
+      operationId: adminCreateUpload
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: {type: string, maxLength: 200}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UploadInput'}
+      responses:
+        '201':
+          description: OPEN private upload session
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UploadSession'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+        '413': {$ref: '#/components/responses/Problem'}
+  /admin/uploads/{uploadId}:
+    get:
+      operationId: adminGetUpload
+      parameters:
+        - {$ref: '#/components/parameters/UploadId'}
+      responses:
+        '200':
+          description: Upload session
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UploadSession'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+  /admin/uploads/{uploadId}/parts:
+    get:
+      operationId: adminListUploadParts
+      parameters:
+        - {$ref: '#/components/parameters/UploadId'}
+        - {name: marker, in: query, schema: {type: integer, minimum: 1}}
+      responses:
+        '200':
+          description: Authoritative uploaded parts
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UploadedPartPage'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+  /admin/uploads/{uploadId}/part-urls:
+    post:
+      operationId: adminSignUploadParts
+      parameters:
+        - {$ref: '#/components/parameters/UploadId'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PartSignRequest'}
+      responses:
+        '200':
+          description: Presigned part URLs
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SignedPartList'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+  /admin/uploads/{uploadId}/complete:
+    post:
+      operationId: adminCompleteUpload
+      parameters:
+        - {$ref: '#/components/parameters/UploadId'}
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: {type: string, maxLength: 200}
+      responses:
+        '200':
+          description: Completed session with the queued job
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UploadSession'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+        '503': {$ref: '#/components/responses/Problem'}
+  /admin/uploads/{uploadId}/abort:
+    post:
+      operationId: adminAbortUpload
+      parameters:
+        - {$ref: '#/components/parameters/UploadId'}
+      responses:
+        '200':
+          description: Aborted upload session
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UploadSession'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+  /admin/movies/{movieId}/versions:
+    get:
+      operationId: adminListVersions
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Movie-scoped media versions
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MediaVersionPage'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+  /admin/movies/{movieId}/assets:
+    get:
+      operationId: adminListAssets
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Movie-scoped artwork assets
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MediaAssetPage'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+  /admin/assets/{assetId}/preview:
+    post:
+      operationId: adminPreviewAsset
+      parameters:
+        - {$ref: '#/components/parameters/AssetId'}
+      responses:
+        '200':
+          description: Short-lived private read URL for a validated artwork asset
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AssetPreview'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+  /admin/movies/{movieId}/artwork:
+    post:
+      operationId: adminAttachArtwork
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+        - {$ref: '#/components/parameters/IfMatch'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ArtworkRequest'}
+      responses:
+        '200':
+          description: Movie with the selected artwork pointer
+          headers:
+            ETag: {schema: {type: string}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMovie'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+        '412': {$ref: '#/components/responses/Problem'}
+        '428': {$ref: '#/components/responses/Problem'}
+  /admin/jobs:
+    get:
+      operationId: adminListJobs
+      parameters:
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Processing job page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/JobPage'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+  /admin/jobs/{jobId}:
+    get:
+      operationId: adminGetJob
+      parameters:
+        - {$ref: '#/components/parameters/JobId'}
+      responses:
+        '200':
+          description: Processing job
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/JobView'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+  /admin/jobs/{jobId}/retry:
+    post:
+      operationId: adminRetryJob
+      parameters:
+        - {$ref: '#/components/parameters/JobId'}
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: {type: string, maxLength: 200}
+      responses:
+        '201':
+          description: New queued job targeting the retained source
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/JobView'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+  /admin/audit:
+    get:
+      operationId: adminListAudit
+      parameters:
+        - {name: action, in: query, schema: {type: string, maxLength: 64}}
+        - {name: entityType, in: query, schema: {type: string, maxLength: 64}}
+        - {name: entityId, in: query, schema: {type: string, format: uuid}}
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Paged audit history with secret-like fields removed
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuditEventPage'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+  /admin/movies/{movieId}/publish:
+    post:
+      operationId: adminPublishMovie
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+        - {$ref: '#/components/parameters/IfMatch'}
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PublishRequest'}
+      responses:
+        '200':
+          description: Published movie with the active version and artwork pointers
+          headers:
+            ETag: {schema: {type: string}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMovie'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+        '412': {$ref: '#/components/responses/Problem'}
+        '428': {$ref: '#/components/responses/Problem'}
+  /admin/movies/{movieId}/activate:
+    post:
+      operationId: adminActivateVersion
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+        - {$ref: '#/components/parameters/IfMatch'}
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PublishRequest'}
+      responses:
+        '200':
+          description: Movie with the newly activated version
+          headers:
+            ETag: {schema: {type: string}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMovie'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+        '412': {$ref: '#/components/responses/Problem'}
+        '428': {$ref: '#/components/responses/Problem'}
+  /admin/movies/{movieId}/unpublish:
+    post:
+      operationId: adminUnpublishMovie
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+        - {$ref: '#/components/parameters/IfMatch'}
+      responses:
+        '200':
+          description: UNPUBLISHED movie; the active version is retained
+          headers:
+            ETag: {schema: {type: string}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMovie'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+        '412': {$ref: '#/components/responses/Problem'}
+        '428': {$ref: '#/components/responses/Problem'}
+  /admin/movies/{movieId}/archive:
+    post:
+      operationId: adminArchiveMovie
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+        - {$ref: '#/components/parameters/IfMatch'}
+      responses:
+        '200':
+          description: ARCHIVED movie
+          headers:
+            ETag: {schema: {type: string}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMovie'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+        '412': {$ref: '#/components/responses/Problem'}
+        '428': {$ref: '#/components/responses/Problem'}
+  /admin/movies/{movieId}/restore:
+    post:
+      operationId: adminRestoreMovie
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+        - {$ref: '#/components/parameters/IfMatch'}
+      responses:
+        '200':
+          description: Restored UNPUBLISHED movie; restore never republishes
+          headers:
+            ETag: {schema: {type: string}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminMovie'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+        '412': {$ref: '#/components/responses/Problem'}
+        '428': {$ref: '#/components/responses/Problem'}
+  /admin/movies/{movieId}/preview:
+    post:
+      operationId: adminPreviewMovie
+      parameters:
+        - {$ref: '#/components/parameters/MovieId'}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PublishRequest'}
+      responses:
+        '200':
+          description: >-
+            Short-lived ADMIN preview grant for the requested READY version, or for the active or
+            latest READY version when no mediaVersionId is supplied
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ManagedPlayback'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
 components:
   securitySchemes:
     bearerAuth:
@@ -190,6 +707,36 @@ components:
       in: path
       required: true
       schema: {type: string, format: uuid}
+    UploadId:
+      name: uploadId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    JobId:
+      name: jobId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    AssetId:
+      name: assetId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema: {type: string}
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, maxLength: 200}
   responses:
     AuthResponse:
       description: Access token returned; rotated refresh token is set as an HttpOnly cookie
@@ -214,10 +761,13 @@ components:
         password: {type: string, minLength: 12, maxLength: 128}
     User:
       type: object
-      required: [id, username]
+      required: [id, username, roles]
       properties:
         id: {type: string, format: uuid}
         username: {type: string}
+        roles:
+          type: array
+          items: {type: string}
     AuthTokens:
       type: object
       required: [accessToken, tokenType, expiresIn, user]
@@ -247,6 +797,182 @@ components:
           properties:
             synopsis: {type: string}
             playable: {type: boolean}
+    MovieInput:
+      type: object
+      additionalProperties: false
+      required: [title, slug, releaseYear, maturityRating, featured]
+      properties:
+        title: {type: string, minLength: 1, maxLength: 200}
+        slug: {type: string, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$', maxLength: 120}
+        synopsis: {type: string, maxLength: 10000}
+        releaseYear: {type: integer, minimum: 1888, maximum: 2200}
+        maturityRating: {type: string, enum: [G, PG, PG-13, R, NC-17, NR]}
+        genreIds:
+          type: array
+          uniqueItems: true
+          maxItems: 10
+          items: {type: integer, minimum: 1}
+        featured: {type: boolean}
+    AdminMovie:
+      type: object
+      required: [id, title, slug, synopsis, releaseYear, maturityRating, genreIds, featured,
+                 lifecycle, revision, managementMode, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        title: {type: string}
+        slug: {type: string}
+        synopsis: {type: string}
+        releaseYear: {type: integer}
+        maturityRating: {type: string}
+        genreIds: {type: array, items: {type: integer}}
+        featured: {type: boolean}
+        lifecycle: {type: string, enum: [DRAFT, PUBLISHED, UNPUBLISHED, ARCHIVED]}
+        revision: {type: integer, format: int64}
+        managementMode: {type: string, enum: [LEGACY, MANAGED]}
+        activeMediaVersionId: {type: [string, 'null'], format: uuid}
+        posterAssetId: {type: [string, 'null'], format: uuid}
+        backdropAssetId: {type: [string, 'null'], format: uuid}
+        runtimeSeconds: {type: [integer, 'null']}
+        firstPublishedAt: {type: [string, 'null'], format: date-time}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    AdminMoviePage:
+      type: object
+      required: [items, page, size, total]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/AdminMovie'}}
+        page: {type: integer}
+        size: {type: integer}
+        total: {type: integer, format: int64}
+    GenreOption:
+      type: object
+      required: [id, slug, name]
+      properties:
+        id: {type: integer}
+        slug: {type: string}
+        name: {type: string}
+    UploadInput:
+      type: object
+      additionalProperties: false
+      required: [kind, fileName, contentType, sizeBytes, resumeFingerprint]
+      properties:
+        kind: {type: string, enum: [VIDEO, POSTER, BACKDROP]}
+        fileName: {type: string, maxLength: 255}
+        contentType: {type: string, maxLength: 255}
+        sizeBytes: {type: integer, format: int64, minimum: 1}
+        resumeFingerprint: {type: string, pattern: '^sha256:[0-9a-f]{64}$'}
+    UploadSession:
+      type: object
+      required: [id, movieId, kind, state, partSizeBytes, totalParts, declaredBytes, expiresAt]
+      properties:
+        id: {type: string, format: uuid}
+        movieId: {type: string, format: uuid}
+        mediaVersionId: {type: [string, 'null'], format: uuid}
+        assetId: {type: [string, 'null'], format: uuid}
+        kind: {type: string, enum: [VIDEO, POSTER, BACKDROP]}
+        state: {type: string, enum: [OPEN, COMPLETING, COMPLETED, ABORTED, EXPIRED, FAILED]}
+        partSizeBytes: {type: integer, format: int64}
+        totalParts: {type: integer}
+        declaredBytes: {type: integer, format: int64}
+        expiresAt: {type: string, format: date-time}
+        jobId: {type: [string, 'null'], format: uuid}
+    UploadedPart:
+      type: object
+      required: [partNumber, etag, sizeBytes]
+      properties:
+        partNumber: {type: integer}
+        etag: {type: string}
+        sizeBytes: {type: integer, format: int64}
+    UploadedPartPage:
+      type: object
+      required: [items]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/UploadedPart'}}
+        nextMarker: {type: [integer, 'null']}
+    PartSignRequest:
+      type: object
+      additionalProperties: false
+      required: [partNumbers]
+      properties:
+        partNumbers:
+          type: array
+          minItems: 1
+          maxItems: 32
+          uniqueItems: true
+          items: {type: integer, minimum: 1}
+    SignedPart:
+      type: object
+      required: [partNumber, url, expiresAt, headers]
+      properties:
+        partNumber: {type: integer}
+        url: {type: string, format: uri}
+        expiresAt: {type: string, format: date-time}
+        headers: {type: object, additionalProperties: {type: string}}
+    SignedPartList:
+      type: object
+      required: [items]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/SignedPart'}}
+    MediaVersion:
+      type: object
+      required: [id, movieId, state, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        movieId: {type: string, format: uuid}
+        state: {type: string, enum: [UPLOADING, QUEUED, PROCESSING, READY, FAILED, ABORTED]}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    MediaVersionPage:
+      type: object
+      required: [items, page, size, total]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/MediaVersion'}}
+        page: {type: integer}
+        size: {type: integer}
+        total: {type: integer, format: int64}
+    MediaAsset:
+      type: object
+      required: [id, movieId, kind, state, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        movieId: {type: string, format: uuid}
+        kind: {type: string, enum: [POSTER, BACKDROP]}
+        state: {type: string, enum: [UPLOADING, STORED, PROCESSING, READY, FAILED, ABORTED]}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    MediaAssetPage:
+      type: object
+      required: [items, page, size, total]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/MediaAsset'}}
+        page: {type: integer}
+        size: {type: integer}
+        total: {type: integer, format: int64}
+    JobView:
+      type: object
+      required: [id, movieId, kind, state, attemptNumber, progressPercent, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        movieId: {type: string, format: uuid}
+        mediaVersionId: {type: [string, 'null'], format: uuid}
+        assetId: {type: [string, 'null'], format: uuid}
+        kind: {type: string, enum: [TRANSCODE, ARTWORK]}
+        state: {type: string, enum: [QUEUED, RUNNING, RETRY_WAIT, SUCCEEDED, FAILED]}
+        attemptNumber: {type: integer}
+        progressPercent: {type: integer, minimum: 0, maximum: 100}
+        stage: {type: [string, 'null']}
+        errorCode: {type: [string, 'null']}
+        errorSummary: {type: [string, 'null']}
+        retryAt: {type: [string, 'null'], format: date-time}
+        updatedAt: {type: string, format: date-time}
+    JobPage:
+      type: object
+      required: [items, page, size, total]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/JobView'}}
+        page: {type: integer}
+        size: {type: integer}
+        total: {type: integer, format: int64}
     CatalogRail:
       type: object
       required: [key, title, items]
@@ -269,6 +995,67 @@ components:
         movieId: {type: string, format: uuid}
         manifestUrl: {type: string, format: uri-reference}
         resumePositionSeconds: {type: integer, minimum: 0}
+    ManagedPlayback:
+      type: object
+      required: [movieId, manifestUrl, resumePositionSeconds, sessionId, mediaVersionId, mediaToken,
+                 mediaTokenExpiresAt]
+      properties:
+        movieId: {type: string, format: uuid}
+        manifestUrl: {type: string, format: uri-reference}
+        resumePositionSeconds: {type: integer, minimum: 0}
+        sessionId: {type: string, format: uuid}
+        mediaVersionId: {type: string, format: uuid}
+        mediaToken: {type: string}
+        mediaTokenExpiresAt: {type: string, format: date-time}
+    MediaToken:
+      type: object
+      required: [mediaToken, mediaTokenExpiresAt]
+      properties:
+        mediaToken: {type: string}
+        mediaTokenExpiresAt: {type: string, format: date-time}
+    PublishRequest:
+      type: object
+      additionalProperties: false
+      required: [mediaVersionId]
+      properties:
+        mediaVersionId: {type: string, format: uuid}
+        posterAssetId: {type: [string, 'null'], format: uuid}
+        backdropAssetId: {type: [string, 'null'], format: uuid}
+    ArtworkRequest:
+      type: object
+      additionalProperties: false
+      required: [kind, assetId]
+      properties:
+        kind: {type: string, enum: [POSTER, BACKDROP]}
+        assetId: {type: string, format: uuid}
+    AssetPreview:
+      type: object
+      required: [url, expiresAt]
+      properties:
+        url: {type: string, format: uri}
+        expiresAt: {type: string, format: date-time}
+    AuditEvent:
+      type: object
+      required: [id, actorId, actorType, action, entityType, before, after, createdAt]
+      properties:
+        id: {type: integer, format: int64}
+        actorId: {type: [string, 'null'], format: uuid}
+        actorType: {type: string}
+        action: {type: string}
+        entityType: {type: string}
+        entityId: {type: [string, 'null'], format: uuid}
+        requestId: {type: [string, 'null']}
+        before: {type: object, additionalProperties: true}
+        after: {type: object, additionalProperties: true}
+        createdAt: {type: string, format: date-time}
+    AuditEventPage:
+      type: object
+      required: [items, page, size, total]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/AuditEvent'}}
+        page: {type: integer}
+        size: {type: integer}
+        total: {type: integer, format: int64}
     ProgressUpdate:
       type: object
       additionalProperties: false
@@ -277,6 +1064,8 @@ components:
         positionSeconds: {type: integer, minimum: 0}
         durationSeconds: {type: integer, minimum: 1}
         clientUpdatedAt: {type: string, format: date-time}
+        sessionId: {type: string, format: uuid}
+        mediaVersionId: {type: string, format: uuid}
     Progress:
       allOf:
         - {$ref: '#/components/schemas/ProgressUpdate'}

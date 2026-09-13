@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.lvfast.streaming.common.ApiExceptionHandler;
 import com.lvfast.streaming.common.RequestIdFilter;
 import com.lvfast.streaming.identity.AuthRateLimiter;
+import com.lvfast.streaming.identity.RoleService;
 import com.lvfast.streaming.identity.SecurityConfiguration;
 import java.util.List;
 import java.util.UUID;
@@ -103,6 +104,14 @@ class CatalogSecurityHttpTest {
 
         @Bean AuthRateLimiter authRateLimiter() {
             return mock(AuthRateLimiter.class);
+        }
+
+        @Bean RoleService roleService() {
+            return mock(RoleService.class);
+        }
+
+        @Bean com.lvfast.streaming.media.job.WorkerAccess workerAccess() {
+            return mock(com.lvfast.streaming.media.job.WorkerAccess.class);
         }
 
         @Bean JwtDecoder jwtDecoder() {

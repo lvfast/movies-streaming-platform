@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
                 "app.catalog.import-enabled=false",
                 "app.auth.enabled=false"
         })
+@org.springframework.test.context.ActiveProfiles("test")
 class MediaStreamingApplicationTest {
 
     @Test

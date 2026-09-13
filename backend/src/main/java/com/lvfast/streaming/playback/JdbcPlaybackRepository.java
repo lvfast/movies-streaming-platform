@@ -21,12 +21,19 @@ class JdbcPlaybackRepository implements PlaybackRepository {
     @Override
     public Optional<PlayableMovie> playableMovie(UUID movieId) {
         List<PlayableMovie> rows = jdbc.query("""
-                select id, hls_manifest_url
-                from movie
-                where id=? and published and hls_manifest_url is not null
-                """, (rs, row) -> new PlayableMovie(
-                rs.getObject("id", UUID.class), rs.getString("hls_manifest_url")), movieId);
+                select m.id, m.hls_manifest_url, m.management_mode, m.active_media_version_id
+                from movie m
+                where m.id=? and m.published and m.hls_manifest_url is not null
+                """, this::playableMovieRow, movieId);
         return rows.stream().findFirst();
+    }
+
+    private PlayableMovie playableMovieRow(ResultSet rs, int row) throws SQLException {
+        UUID id = rs.getObject(1, UUID.class);
+        String manifestUrl = rs.getString(2);
+        String managementMode = rs.getString(3);
+        UUID activeMediaVersionId = rs.getObject(4, UUID.class);
+        return new PlayableMovie(id, manifestUrl, managementMode, activeMediaVersionId);
     }
 
     @Override

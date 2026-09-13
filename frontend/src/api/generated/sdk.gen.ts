@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddToWatchlistData, AddToWatchlistErrors, AddToWatchlistResponses, CatalogHomeData, CatalogHomeResponses, CurrentUserData, CurrentUserErrors, CurrentUserResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, MovieBySlugData, MovieBySlugErrors, MovieBySlugResponses, PlaybackData, PlaybackErrors, PlaybackResponses, RefreshData, RefreshErrors, RefreshResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveFromWatchlistData, RemoveFromWatchlistErrors, RemoveFromWatchlistResponses, SearchMoviesData, SearchMoviesErrors, SearchMoviesResponses, UpdateProgressData, UpdateProgressErrors, UpdateProgressResponses, WatchlistData, WatchlistErrors, WatchlistResponses } from './types.gen';
+import type { AddToWatchlistData, AddToWatchlistErrors, AddToWatchlistResponses, AdminAbortUploadData, AdminAbortUploadErrors, AdminAbortUploadResponses, AdminActivateVersionData, AdminActivateVersionErrors, AdminActivateVersionResponses, AdminArchiveMovieData, AdminArchiveMovieErrors, AdminArchiveMovieResponses, AdminAttachArtworkData, AdminAttachArtworkErrors, AdminAttachArtworkResponses, AdminCompleteUploadData, AdminCompleteUploadErrors, AdminCompleteUploadResponses, AdminCreateMovieData, AdminCreateMovieErrors, AdminCreateMovieResponses, AdminCreateUploadData, AdminCreateUploadErrors, AdminCreateUploadResponses, AdminGetJobData, AdminGetJobErrors, AdminGetJobResponses, AdminGetMovieData, AdminGetMovieErrors, AdminGetMovieResponses, AdminGetUploadData, AdminGetUploadErrors, AdminGetUploadResponses, AdminListAssetsData, AdminListAssetsErrors, AdminListAssetsResponses, AdminListAuditData, AdminListAuditErrors, AdminListAuditResponses, AdminListGenresData, AdminListGenresErrors, AdminListGenresResponses, AdminListJobsData, AdminListJobsErrors, AdminListJobsResponses, AdminListMoviesData, AdminListMoviesErrors, AdminListMoviesResponses, AdminListUploadPartsData, AdminListUploadPartsErrors, AdminListUploadPartsResponses, AdminListVersionsData, AdminListVersionsErrors, AdminListVersionsResponses, AdminPreviewAssetData, AdminPreviewAssetErrors, AdminPreviewAssetResponses, AdminPreviewMovieData, AdminPreviewMovieErrors, AdminPreviewMovieResponses, AdminPublishMovieData, AdminPublishMovieErrors, AdminPublishMovieResponses, AdminRestoreMovieData, AdminRestoreMovieErrors, AdminRestoreMovieResponses, AdminRetryJobData, AdminRetryJobErrors, AdminRetryJobResponses, AdminSignUploadPartsData, AdminSignUploadPartsErrors, AdminSignUploadPartsResponses, AdminUnpublishMovieData, AdminUnpublishMovieErrors, AdminUnpublishMovieResponses, AdminUpdateMovieData, AdminUpdateMovieErrors, AdminUpdateMovieResponses, CatalogHomeData, CatalogHomeResponses, CurrentUserData, CurrentUserErrors, CurrentUserResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, MovieBySlugData, MovieBySlugErrors, MovieBySlugResponses, PlaybackData, PlaybackErrors, PlaybackResponses, RefreshData, RefreshErrors, RefreshMediaTokenData, RefreshMediaTokenErrors, RefreshMediaTokenResponses, RefreshPreviewMediaTokenData, RefreshPreviewMediaTokenErrors, RefreshPreviewMediaTokenResponses, RefreshResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveFromWatchlistData, RemoveFromWatchlistErrors, RemoveFromWatchlistResponses, SearchMoviesData, SearchMoviesErrors, SearchMoviesResponses, UpdateProgressData, UpdateProgressErrors, UpdateProgressResponses, WatchlistData, WatchlistErrors, WatchlistResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -76,9 +76,203 @@ export const playback = <ThrowOnError extends boolean = false>(options: Options<
     ...options
 });
 
+export const refreshMediaToken = <ThrowOnError extends boolean = false>(options: Options<RefreshMediaTokenData, ThrowOnError>) => (options.client ?? client).post<RefreshMediaTokenResponses, RefreshMediaTokenErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/me/playback-sessions/{sessionId}/token',
+    ...options
+});
+
+export const refreshPreviewMediaToken = <ThrowOnError extends boolean = false>(options: Options<RefreshPreviewMediaTokenData, ThrowOnError>) => (options.client ?? client).post<RefreshPreviewMediaTokenResponses, RefreshPreviewMediaTokenErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/playback-sessions/{sessionId}/token',
+    ...options
+});
+
 export const updateProgress = <ThrowOnError extends boolean = false>(options: Options<UpdateProgressData, ThrowOnError>) => (options.client ?? client).put<UpdateProgressResponses, UpdateProgressErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/me/progress/{movieId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const adminListMovies = <ThrowOnError extends boolean = false>(options?: Options<AdminListMoviesData, ThrowOnError>) => (options?.client ?? client).get<AdminListMoviesResponses, AdminListMoviesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies',
+    ...options
+});
+
+export const adminCreateMovie = <ThrowOnError extends boolean = false>(options: Options<AdminCreateMovieData, ThrowOnError>) => (options.client ?? client).post<AdminCreateMovieResponses, AdminCreateMovieErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const adminGetMovie = <ThrowOnError extends boolean = false>(options: Options<AdminGetMovieData, ThrowOnError>) => (options.client ?? client).get<AdminGetMovieResponses, AdminGetMovieErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies/{movieId}',
+    ...options
+});
+
+export const adminUpdateMovie = <ThrowOnError extends boolean = false>(options: Options<AdminUpdateMovieData, ThrowOnError>) => (options.client ?? client).put<AdminUpdateMovieResponses, AdminUpdateMovieErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies/{movieId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const adminListGenres = <ThrowOnError extends boolean = false>(options?: Options<AdminListGenresData, ThrowOnError>) => (options?.client ?? client).get<AdminListGenresResponses, AdminListGenresErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/genres',
+    ...options
+});
+
+export const adminCreateUpload = <ThrowOnError extends boolean = false>(options: Options<AdminCreateUploadData, ThrowOnError>) => (options.client ?? client).post<AdminCreateUploadResponses, AdminCreateUploadErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies/{movieId}/uploads',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const adminGetUpload = <ThrowOnError extends boolean = false>(options: Options<AdminGetUploadData, ThrowOnError>) => (options.client ?? client).get<AdminGetUploadResponses, AdminGetUploadErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/uploads/{uploadId}',
+    ...options
+});
+
+export const adminListUploadParts = <ThrowOnError extends boolean = false>(options: Options<AdminListUploadPartsData, ThrowOnError>) => (options.client ?? client).get<AdminListUploadPartsResponses, AdminListUploadPartsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/uploads/{uploadId}/parts',
+    ...options
+});
+
+export const adminSignUploadParts = <ThrowOnError extends boolean = false>(options: Options<AdminSignUploadPartsData, ThrowOnError>) => (options.client ?? client).post<AdminSignUploadPartsResponses, AdminSignUploadPartsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/uploads/{uploadId}/part-urls',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const adminCompleteUpload = <ThrowOnError extends boolean = false>(options: Options<AdminCompleteUploadData, ThrowOnError>) => (options.client ?? client).post<AdminCompleteUploadResponses, AdminCompleteUploadErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/uploads/{uploadId}/complete',
+    ...options
+});
+
+export const adminAbortUpload = <ThrowOnError extends boolean = false>(options: Options<AdminAbortUploadData, ThrowOnError>) => (options.client ?? client).post<AdminAbortUploadResponses, AdminAbortUploadErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/uploads/{uploadId}/abort',
+    ...options
+});
+
+export const adminListVersions = <ThrowOnError extends boolean = false>(options: Options<AdminListVersionsData, ThrowOnError>) => (options.client ?? client).get<AdminListVersionsResponses, AdminListVersionsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies/{movieId}/versions',
+    ...options
+});
+
+export const adminListAssets = <ThrowOnError extends boolean = false>(options: Options<AdminListAssetsData, ThrowOnError>) => (options.client ?? client).get<AdminListAssetsResponses, AdminListAssetsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies/{movieId}/assets',
+    ...options
+});
+
+export const adminPreviewAsset = <ThrowOnError extends boolean = false>(options: Options<AdminPreviewAssetData, ThrowOnError>) => (options.client ?? client).post<AdminPreviewAssetResponses, AdminPreviewAssetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/assets/{assetId}/preview',
+    ...options
+});
+
+export const adminAttachArtwork = <ThrowOnError extends boolean = false>(options: Options<AdminAttachArtworkData, ThrowOnError>) => (options.client ?? client).post<AdminAttachArtworkResponses, AdminAttachArtworkErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies/{movieId}/artwork',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const adminListJobs = <ThrowOnError extends boolean = false>(options?: Options<AdminListJobsData, ThrowOnError>) => (options?.client ?? client).get<AdminListJobsResponses, AdminListJobsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/jobs',
+    ...options
+});
+
+export const adminGetJob = <ThrowOnError extends boolean = false>(options: Options<AdminGetJobData, ThrowOnError>) => (options.client ?? client).get<AdminGetJobResponses, AdminGetJobErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/jobs/{jobId}',
+    ...options
+});
+
+export const adminRetryJob = <ThrowOnError extends boolean = false>(options: Options<AdminRetryJobData, ThrowOnError>) => (options.client ?? client).post<AdminRetryJobResponses, AdminRetryJobErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/jobs/{jobId}/retry',
+    ...options
+});
+
+export const adminListAudit = <ThrowOnError extends boolean = false>(options?: Options<AdminListAuditData, ThrowOnError>) => (options?.client ?? client).get<AdminListAuditResponses, AdminListAuditErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/audit',
+    ...options
+});
+
+export const adminPublishMovie = <ThrowOnError extends boolean = false>(options: Options<AdminPublishMovieData, ThrowOnError>) => (options.client ?? client).post<AdminPublishMovieResponses, AdminPublishMovieErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies/{movieId}/publish',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const adminActivateVersion = <ThrowOnError extends boolean = false>(options: Options<AdminActivateVersionData, ThrowOnError>) => (options.client ?? client).post<AdminActivateVersionResponses, AdminActivateVersionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies/{movieId}/activate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const adminUnpublishMovie = <ThrowOnError extends boolean = false>(options: Options<AdminUnpublishMovieData, ThrowOnError>) => (options.client ?? client).post<AdminUnpublishMovieResponses, AdminUnpublishMovieErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies/{movieId}/unpublish',
+    ...options
+});
+
+export const adminArchiveMovie = <ThrowOnError extends boolean = false>(options: Options<AdminArchiveMovieData, ThrowOnError>) => (options.client ?? client).post<AdminArchiveMovieResponses, AdminArchiveMovieErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies/{movieId}/archive',
+    ...options
+});
+
+export const adminRestoreMovie = <ThrowOnError extends boolean = false>(options: Options<AdminRestoreMovieData, ThrowOnError>) => (options.client ?? client).post<AdminRestoreMovieResponses, AdminRestoreMovieErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies/{movieId}/restore',
+    ...options
+});
+
+export const adminPreviewMovie = <ThrowOnError extends boolean = false>(options: Options<AdminPreviewMovieData, ThrowOnError>) => (options.client ?? client).post<AdminPreviewMovieResponses, AdminPreviewMovieErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/movies/{movieId}/preview',
     ...options,
     headers: {
         'Content-Type': 'application/json',

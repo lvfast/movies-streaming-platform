@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lvfast.dev/contracts/media/artifact-v1.schema.json",
+  "title": "Immutable processing artifact manifest",
+  "description": "Written last under the backend-issued attempt prefix. Object keys are relative to that prefix.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "jobId",
+    "attemptId",
+    "kind",
+    "profile",
+    "movieId",
+    "mediaVersionId",
+    "assetId",
+    "width",
+    "height",
+    "durationSeconds",
+    "videoCodec",
+    "audioCodec",
+    "playlist",
+    "objects"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "jobId": { "type": "string", "format": "uuid" },
+    "attemptId": { "type": "string", "format": "uuid" },
+    "kind": { "enum": ["TRANSCODE", "ARTWORK"] },
+    "profile": { "type": "string", "minLength": 1 },
+    "movieId": { "type": "string", "format": "uuid" },
+    "mediaVersionId": { "type": ["string", "null"], "format": "uuid" },
+    "assetId": { "type": ["string", "null"], "format": "uuid" },
+    "width": { "type": "integer", "minimum": 1 },
+    "height": { "type": "integer", "minimum": 1 },
+    "durationSeconds": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+    "videoCodec": { "type": ["string", "null"], "enum": ["h264", null] },
+    "audioCodec": { "type": ["string", "null"], "enum": ["aac", null] },
+    "playlist": { "type": ["string", "null"] },
+    "objects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "sizeBytes", "sha256"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "sizeBytes": { "type": "integer", "minimum": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    }
+  }
+}

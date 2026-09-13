@@ -1,0 +1,110 @@
+# Local media processing overlay: MinIO storage, RabbitMQ and the transcoder worker.
+# Extends compose.yml (and compose.local.yml for the JWT key material). The backend reaches
+# MinIO/RabbitMQ over the internal application network; the "source-browser" role presigns URLs with
+# the host-reachable endpoint so a browser can PUT parts directly.
+services:
+  backend:
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-media}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-media-local}
+      MEDIA_SOURCE_BUCKET: ${MEDIA_SOURCE_BUCKET:-media-source}
+      MEDIA_DELIVERY_BUCKET: ${MEDIA_DELIVERY_BUCKET:-media-delivery}
+      MEDIA_WORKER_CREDENTIAL: ${MEDIA_WORKER_CREDENTIAL:-worker-local-credential}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_BROWSER_ENDPOINT: ${S3_BROWSER_ENDPOINT:-http://localhost:9000}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      S3_BROWSER_ACCESS_KEY: ${S3_BROWSER_ACCESS_KEY:-minioadmin}
+      S3_BROWSER_SECRET_KEY: ${S3_BROWSER_SECRET_KEY:-minioadmin}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  rabbitmq:
+    image: rabbitmq:4-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-media}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-media-local}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 30s
+      retries: 10
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    networks:
+      - application
+    mem_limit: 512m
+    cpus: 0.5
+    pids_limit: 1000
+    restart: unless-stopped
+
+  transcoder:
+    image: ${TRANSCODER_IMAGE:-media-transcoder:local}
+    build:
+      context: .
+      dockerfile: transcoder/Dockerfile
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-media}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-media-local}
+      BACKEND_BASE_URL: http://backend:8080
+      WORKER_ID: ${WORKER_ID:-worker-1}
+      MEDIA_WORKER_CREDENTIAL: ${MEDIA_WORKER_CREDENTIAL:-worker-local-credential}
+      MEDIA_SOURCE_BUCKET: ${MEDIA_SOURCE_BUCKET:-media-source}
+      MEDIA_DELIVERY_BUCKET: ${MEDIA_DELIVERY_BUCKET:-media-delivery}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+    depends_on:
+      backend:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - application
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=512m
+    mem_limit: 1024m
+    cpus: 1.0
+    pids_limit: 500
+    restart: unless-stopped
+
+  minio:
+    image: quay.io/minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - ./media-data:/data
+    networks:
+      - application
+      - edge
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped

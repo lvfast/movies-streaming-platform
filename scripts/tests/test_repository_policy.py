@@ -44,7 +44,7 @@ def banned_token_violations(paths):
     for path in paths:
         try:
             text = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, FileNotFoundError):
             continue
         folded = text.casefold()
         for banned in BANNED:
@@ -93,13 +93,18 @@ class RepositoryPolicyTest(unittest.TestCase):
             )
 
     def test_nginx_proxy_replaces_untrusted_client_address_headers(self):
-        nginx = (ROOT / "frontend/nginx.conf").read_text(encoding="utf-8")
+        nginx = (ROOT / "frontend/nginx.conf.template").read_text(encoding="utf-8")
         api_location = nginx.split("location /api/ {", maxsplit=1)[1].split("}", maxsplit=1)[0]
 
         self.assertIn("proxy_set_header X-Forwarded-For $remote_addr;", api_location)
         self.assertIn('proxy_set_header Forwarded "";', api_location)
         self.assertIn('proxy_set_header X-Real-IP "";', api_location)
         self.assertNotIn("$proxy_add_x_forwarded_for", api_location)
+
+    def test_nginx_csp_names_the_declared_storage_origin_for_browser_uploads(self):
+        nginx = (ROOT / "frontend/nginx.conf.template").read_text(encoding="utf-8")
+        self.assertIn('set $storage_origin "${MEDIA_STORAGE_ORIGIN}";', nginx)
+        self.assertIn("connect-src 'self' $media_origin $storage_origin;", nginx)
 
     def test_public_markdown_relative_links_exist(self):
         broken_links = broken_markdown_links()

@@ -34,14 +34,14 @@ Acceptance IDs inside a packet are tracking points, not separate sessions, revie
 
 | Packet | Plan | Depends on | Completion outcome | Status |
 | --- | --- | --- | --- | --- |
-| P1 | [Admin foundation](01-admin-foundation.md) | none | Operator grants ADMIN; admin safely creates/edits managed drafts | NOT_STARTED |
-| P2 | [Direct uploads](02-direct-uploads.md) | P1 | Private multipart uploads resume/complete/abort and create one queued job | NOT_STARTED |
-| P3 | [Processing happy path](03-processing-happy-path.md) | P2 | RabbitMQ worker produces verified READY HLS and artwork | NOT_STARTED |
-| P4 | [Processing reliability](04-processing-reliability.md) | P3 | Lease recovery, bounded retry and three high-value failure cases pass | NOT_STARTED |
-| P5 | [Publish and playback](05-publish-playback.md) | P4 | Published managed media plays through token-protected HLS | NOT_STARTED |
-| P6 | [Admin core UI](06-admin-core-ui.md) | P5 | Protected Admin library and draft editor work with generated contracts | NOT_STARTED |
-| P7 | [Admin media UI](07-admin-media-ui.md) | P6 | Upload, jobs, preview, lifecycle and audit journeys work | NOT_STARTED |
-| P8 | [Integration and release](08-integration-release.md) | P7 | One complete journey and final relevant suites provide release evidence | NOT_STARTED |
+| P1 | [Admin foundation](01-admin-foundation.md) | none | Operator grants ADMIN; admin safely creates/edits managed drafts | DONE |
+| P2 | [Direct uploads](02-direct-uploads.md) | P1 | Private multipart uploads resume/complete/abort and create one queued job | DONE |
+| P3 | [Processing happy path](03-processing-happy-path.md) | P2 | RabbitMQ worker produces verified READY HLS and artwork | DONE |
+| P4 | [Processing reliability](04-processing-reliability.md) | P3 | Lease recovery, bounded retry and three high-value failure cases pass | DONE |
+| P5 | [Publish and playback](05-publish-playback.md) | P4 | Published managed media plays through token-protected HLS | FIXES APPLIED — REVIEW |
+| P6 | [Admin core UI](06-admin-core-ui.md) | P5 | Protected Admin library and draft editor work with generated contracts | REVIEW |
+| P7 | [Admin media UI](07-admin-media-ui.md) | P6 | Upload, jobs, preview, lifecycle and audit journeys work | DONE — the consolidated live browser journey (P7's only outstanding item) was executed and passed as part of P8 |
+| P8 | [Integration and release](08-integration-release.md) | P7 | One complete journey and final relevant suites provide release evidence | REVIEW — complete 9-step journey PASS; 4/5 full suites green; backend full suite carries 7 pre-existing test-infra errors proven unrelated to P8 |
 
 All statuses start at `NOT_STARTED`. The deleted plan marked earlier tasks `REVIEW`, but the current worktree had no corresponding implementation or handoff evidence; the new ledger does not carry those unsupported statuses forward.
 

@@ -26,14 +26,14 @@ public class CatalogManifestImporter implements ApplicationRunner {
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
     private final Resource manifest;
-    private final CatalogCache cache;
+    private final CatalogRevisionRepository revisions;
 
     CatalogManifestImporter(JdbcTemplate jdbc, ObjectMapper json,
-            @Value("${app.catalog.manifest}") Resource manifest, CatalogCache cache) {
+            @Value("${app.catalog.manifest}") Resource manifest, CatalogRevisionRepository revisions) {
         this.jdbc = jdbc;
         this.json = json;
         this.manifest = manifest;
-        this.cache = cache;
+        this.revisions = revisions;
     }
 
     @Override
@@ -87,13 +87,20 @@ public class CatalogManifestImporter implements ApplicationRunner {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                cache.invalidateAll();
+                revisions.bump();
             }
         });
         return true;
     }
 
     private void importMovie(ManifestMovie movie) {
+        List<String> modes = jdbc.queryForList(
+                "select management_mode from movie where id=?", String.class, movie.id());
+        if (!modes.isEmpty() && "MANAGED".equals(modes.getFirst())) {
+            // An editor already adopted this row; the manifest must not overwrite its metadata,
+            // genres or publication state.
+            return;
+        }
         jdbc.update("""
                 insert into movie(id, slug, title, synopsis, release_year, runtime_seconds, maturity_rating,
                                   poster_url, backdrop_url, hls_manifest_url, featured, published)

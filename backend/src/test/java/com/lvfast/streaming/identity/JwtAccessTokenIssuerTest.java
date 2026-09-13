@@ -34,7 +34,7 @@ class JwtAccessTokenIssuerTest {
         UserAccount user = UserAccount.register("demo", "hash", Instant.parse("2026-09-06T00:00:00Z"));
         Instant issuedAt = Instant.now().minusSeconds(1).truncatedTo(ChronoUnit.SECONDS);
 
-        String encoded = issuer.issue(user, issuedAt, Duration.ofMinutes(15));
+        String encoded = issuer.issue(user, java.util.Set.of("USER"), issuedAt, Duration.ofMinutes(15));
 
         JwtDecoder decoder = NimbusJwtDecoder.withPublicKey(publicKey)
                 .signatureAlgorithm(SignatureAlgorithm.RS256)
@@ -43,6 +43,7 @@ class JwtAccessTokenIssuerTest {
         assertThat(jwt.getSubject()).isEqualTo(user.id().toString());
         assertThat(jwt.getIssuer().toString()).isEqualTo("https://issuer.example");
         assertThat(jwt.getClaimAsString("username")).isEqualTo("demo");
+        assertThat(jwt.getClaimAsStringList("roles")).containsExactly("USER");
         assertThat(jwt.getIssuedAt()).isEqualTo(issuedAt);
         assertThat(jwt.getExpiresAt()).isEqualTo(issuedAt.plus(Duration.ofMinutes(15)));
         assertThat(jwt.getHeaders().get("alg")).isEqualTo("RS256");

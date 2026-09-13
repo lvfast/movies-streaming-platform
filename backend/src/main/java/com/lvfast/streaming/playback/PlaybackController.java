@@ -23,6 +23,10 @@ public class PlaybackController {
         this.playback = playback;
     }
 
+    /**
+     * Managed movies answer a version-pinned playback grant; legacy fixtures keep the original
+     * manifest/resume shape.
+     */
     @GetMapping("/movies/{movieId}/playback")
     Playback playback(
             @AuthenticationPrincipal Jwt jwt,
@@ -31,12 +35,29 @@ public class PlaybackController {
     }
 
     @PutMapping("/me/progress/{movieId}")
-    ViewingProgress updateProgress(
+    Object updateProgress(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID movieId,
             @Valid @RequestBody ProgressUpdateRequest request) {
+        UUID userId = userId(jwt);
+        boolean hasSession = request.sessionId() != null;
+        boolean hasVersion = request.mediaVersionId() != null;
+        if (hasSession != hasVersion) {
+            throw new ProgressValidationException(
+                    "sessionId and mediaVersionId must be supplied together");
+        }
+        if (hasSession) {
+            return playback.updateManagedProgress(
+                    userId,
+                    movieId,
+                    request.sessionId(),
+                    request.mediaVersionId(),
+                    request.positionSeconds(),
+                    request.durationSeconds(),
+                    request.clientUpdatedAt());
+        }
         return playback.updateProgress(
-                userId(jwt),
+                userId,
                 movieId,
                 request.positionSeconds(),
                 request.durationSeconds(),
@@ -50,5 +71,7 @@ public class PlaybackController {
     public record ProgressUpdateRequest(
             @NotNull @Min(0) Integer positionSeconds,
             @NotNull @Min(1) Integer durationSeconds,
-            @NotNull Instant clientUpdatedAt) {}
+            @NotNull Instant clientUpdatedAt,
+            UUID sessionId,
+            UUID mediaVersionId) {}
 }

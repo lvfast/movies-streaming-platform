@@ -20,11 +20,17 @@ class ArchitectureTest {
             "com.lvfast.streaming.identity",
             "com.lvfast.streaming.catalog",
             "com.lvfast.streaming.library",
-            "com.lvfast.streaming.playback");
+            "com.lvfast.streaming.playback",
+            "com.lvfast.streaming.administration",
+            "com.lvfast.streaming.audit",
+            "com.lvfast.streaming.media",
+            "com.lvfast.streaming.messaging");
 
     @Test
-    void containsTheFourApprovedModules() {
-        for (String module : new String[] {"Identity", "Catalog", "Library", "Playback"}) {
+    void containsTheApprovedModules() {
+        for (String module : new String[] {
+            "Identity", "Catalog", "Library", "Playback", "Administration", "Audit", "Media"
+        }) {
             classes()
                     .that().haveSimpleName(module + "Module")
                     .should().resideInAPackage(".." + module.toLowerCase() + "..")

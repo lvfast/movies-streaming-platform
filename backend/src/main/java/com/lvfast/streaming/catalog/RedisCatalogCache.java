@@ -2,58 +2,59 @@ package com.lvfast.streaming.catalog;
 
 import tools.jackson.databind.ObjectMapper;
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
+/**
+ * Revision-namespaced catalog cache. Keys embed the current PostgreSQL catalog revision so admin
+ * and import mutations simply bump the revision; stale entries expire by TTL and no wildcard
+ * {@code KEYS} scan is ever performed.
+ */
 @Component
 class RedisCatalogCache implements CatalogCache {
     private static final Logger log = LoggerFactory.getLogger(RedisCatalogCache.class);
-    private static final String HOME_KEY = "catalog:home:v1";
+    private static final String HOME_KEY_PREFIX = "catalog:home:v";
+    private static final String MOVIE_KEY_PREFIX = "catalog:movie:v";
     private static final Duration TTL = Duration.ofMinutes(10);
     private final StringRedisTemplate redis;
     private final ObjectMapper json;
+    private final CatalogRevisionRepository revisions;
 
-    RedisCatalogCache(StringRedisTemplate redis, ObjectMapper json) {
+    RedisCatalogCache(StringRedisTemplate redis, ObjectMapper json, CatalogRevisionRepository revisions) {
         this.redis = redis;
         this.json = json;
+        this.revisions = revisions;
     }
 
     @Override
     public Optional<CatalogHome> getHome() {
-        return read(HOME_KEY, CatalogHome.class);
+        return read(homeKey(), CatalogHome.class);
     }
 
     @Override
     public void putHome(CatalogHome home) {
-        write(HOME_KEY, home);
+        write(homeKey(), home);
     }
 
     @Override
     public Optional<MovieDetails> getMovie(String slug) {
-        return read("catalog:movie:v1:" + slug, MovieDetails.class);
+        return read(movieKey(slug), MovieDetails.class);
     }
 
     @Override
     public void putMovie(MovieDetails movie) {
-        write("catalog:movie:v1:" + movie.slug(), movie);
+        write(movieKey(movie.slug()), movie);
     }
 
-    @Override
-    public void invalidateAll() {
-        try {
-            Set<String> keys = new HashSet<>();
-            Set<String> movieKeys = redis.keys("catalog:movie:v1:*");
-            if (movieKeys != null) keys.addAll(movieKeys);
-            keys.add(HOME_KEY);
-            redis.delete(keys);
-        } catch (Exception unavailable) {
-            log.debug("Catalog cache invalidation bypassed: {}", unavailable.getClass().getSimpleName());
-        }
+    private String homeKey() {
+        return HOME_KEY_PREFIX + revisions.current();
+    }
+
+    private String movieKey(String slug) {
+        return MOVIE_KEY_PREFIX + revisions.current() + ":" + slug;
     }
 
     private <T> Optional<T> read(String key, Class<T> type) {

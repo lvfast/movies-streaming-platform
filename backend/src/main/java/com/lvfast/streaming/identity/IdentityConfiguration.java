@@ -35,11 +35,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 public class IdentityConfiguration {
 
     @Bean
-    Clock clock() {
-        return Clock.systemUTC();
-    }
-
-    @Bean
     PasswordEncoder passwordEncoder() {
         return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
     }
@@ -65,6 +60,7 @@ public class IdentityConfiguration {
     }
 
     @Bean
+    @org.springframework.context.annotation.Primary
     JwtDecoder jwtDecoder(KeyMaterial keys, AuthProperties properties) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(keys.publicKey()).build();
         decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
@@ -73,7 +69,9 @@ public class IdentityConfiguration {
     }
 
     @Bean
-    AccessTokenIssuer accessTokenIssuer(NimbusJwtEncoder encoder, AuthProperties properties) {
+    AccessTokenIssuer accessTokenIssuer(
+            @org.springframework.beans.factory.annotation.Qualifier("jwtEncoder") NimbusJwtEncoder encoder,
+            AuthProperties properties) {
         return new JwtAccessTokenIssuer(encoder, properties.issuer());
     }
 
@@ -85,6 +83,7 @@ public class IdentityConfiguration {
             PasswordEncoder passwordEncoder,
             RefreshTokenCodec refreshTokens,
             AccessTokenIssuer accessTokens,
+            RoleService roles,
             Clock clock,
             AuthProperties properties) {
         return new AuthService(
@@ -94,6 +93,7 @@ public class IdentityConfiguration {
                 passwordEncoder,
                 refreshTokens,
                 accessTokens,
+                roles,
                 clock,
                 properties.accessTokenTtl(),
                 properties.refreshTokenTtl());

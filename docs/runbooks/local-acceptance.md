@@ -78,10 +78,15 @@ Render the local Compose model using the documented defaults:
 docker compose --env-file .env.example -f compose.yml -f compose.local.yml config --quiet
 ```
 
-Validate the Nginx configuration:
+Validate the Nginx configuration. The shipped `frontend/nginx.conf.template` is rendered at container
+start by `frontend/docker-entrypoint.d/05-render-nginx-config.sh`, so reproduce that substitution
+(only `MEDIA_ORIGIN`) and check the rendered file:
 
 ```sh
-docker run --rm --add-host backend:127.0.0.1 -v "$PWD/frontend/nginx.conf:/etc/nginx/nginx.conf:ro" nginx:1.28-alpine nginx -t
+docker run --rm --add-host backend:127.0.0.1 -e MEDIA_ORIGIN=http://127.0.0.1:8899 \
+  -v "$PWD/frontend/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro" \
+  -u nginx --entrypoint sh nginx:1.28-alpine -c \
+  'envsubst "\${MEDIA_ORIGIN}" < /etc/nginx/templates/nginx.conf.template > /tmp/nginx.conf && nginx -t -c /tmp/nginx.conf'
 ```
 
 Lint repository workflows with the pinned actionlint version used by CI:

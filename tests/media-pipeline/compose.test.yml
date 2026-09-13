@@ -1,0 +1,174 @@
+# Disposable P4 recovery harness. Run with an explicit project name so it never collides with a
+# developer stack and owns only the resources it creates:
+#   docker compose -p media-recovery-test -f tests/media-pipeline/compose.test.yml up -d --build
+# The lease TTL and recovery/outbox poll intervals are deliberately short so the recovery scenarios
+# complete within bounded deadlines.
+name: media-recovery-test
+
+x-service-security: &service-security
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  networks:
+    - application
+
+services:
+  postgres:
+    <<: *service-security
+    image: postgres:17-alpine
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    environment:
+      POSTGRES_DB: media_streaming
+      POSTGRES_USER: media_streaming
+      POSTGRES_PASSWORD: media-streaming-test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U media_streaming -d media_streaming"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+      start_period: 5s
+
+  redis:
+    <<: *service-security
+    image: redis:7.4-alpine
+    user: redis
+    command: ["redis-server", "--appendonly", "no", "--save", ""]
+    read_only: true
+    tmpfs:
+      - /data:rw,noexec,nosuid,size=32m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+      start_period: 5s
+
+  minio:
+    <<: *service-security
+    image: quay.io/minio/minio:latest
+    command: ["server", "/data"]
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "127.0.0.1:19000:9000"
+
+  rabbitmq:
+    <<: *service-security
+    image: rabbitmq:4-alpine
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    environment:
+      RABBITMQ_DEFAULT_USER: media
+      RABBITMQ_DEFAULT_PASS: media-test
+    ports:
+      - "127.0.0.1:5673:5672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 3s
+      timeout: 10s
+      retries: 40
+      start_period: 10s
+
+  jwt-keygen:
+    image: alpine/openssl:3.5.4
+    network_mode: none
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        if [ ! -s /keys/jwt-private.pem ]; then
+          umask 077
+          openssl genpkey -quiet -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /keys/jwt-private.pem
+        fi
+        if [ ! -s /keys/jwt-public.pem ]; then
+          openssl pkey -in /keys/jwt-private.pem -pubout -out /keys/jwt-public.pem
+        fi
+        chmod 0444 /keys/jwt-private.pem /keys/jwt-public.pem
+    volumes:
+      - jwt-keys:/keys
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: "no"
+
+  backend:
+    <<: *service-security
+    build:
+      context: ../..
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/media_streaming
+      DATABASE_USERNAME: media_streaming
+      DATABASE_PASSWORD: media-streaming-test
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_PRIVATE_KEY: file:/run/secrets/jwt-private.pem
+      JWT_PUBLIC_KEY: file:/run/secrets/jwt-public.pem
+      SECURE_COOKIE: "false"
+      REFRESH_COOKIE_NAME: refresh_token
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: media
+      RABBITMQ_PASSWORD: media-test
+      MEDIA_SOURCE_BUCKET: media-source
+      MEDIA_DELIVERY_BUCKET: media-delivery
+      MEDIA_WORKER_CREDENTIAL: worker-test-credential
+      MEDIA_WORKER_LEASE_TTL: PT5S
+      MEDIA_RECOVERY_POLL_INTERVAL_MS: 500
+      MEDIA_RECOVERY_INITIAL_DELAY_MS: 500
+      MEDIA_OUTBOX_POLL_INTERVAL_MS: 500
+      S3_ENDPOINT: http://minio:9000
+      S3_BROWSER_ENDPOINT: http://127.0.0.1:19000
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_BROWSER_ACCESS_KEY: minioadmin
+      S3_BROWSER_SECRET_KEY: minioadmin
+    ports:
+      - "127.0.0.1:18080:8080"
+    volumes:
+      - jwt-keys:/run/secrets:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      jwt-keygen:
+        condition: service_completed_successfully
+
+  transcoder:
+    <<: *service-security
+    build:
+      context: ../..
+      dockerfile: transcoder/Dockerfile
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: media
+      RABBITMQ_PASSWORD: media-test
+      BACKEND_BASE_URL: http://backend:8080
+      WORKER_ID: worker-1
+      MEDIA_WORKER_CREDENTIAL: worker-test-credential
+      MEDIA_SOURCE_BUCKET: media-source
+      MEDIA_DELIVERY_BUCKET: media-delivery
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      TRANSCODER_LEASE_HEARTBEAT_INTERVAL: PT2S
+    depends_on:
+      backend:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+networks:
+  application:
+
+volumes:
+  jwt-keys:

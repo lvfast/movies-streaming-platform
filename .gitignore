@@ -7,9 +7,14 @@
 *.key
 
 backend/target/
+transcoder/target/
 frontend/node_modules/
 frontend/dist/
 coverage/
 artifacts/
+media-data/
 __pycache__/
 *.py[cod]
+
+# Local smoke-run logs from the media pipeline harness.
+tests/media-pipeline/.p5-smoke.log

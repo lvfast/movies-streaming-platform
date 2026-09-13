@@ -17,6 +17,7 @@ import type {
   AuthTokens,
   CatalogRail,
   Credentials,
+  ManagedPlayback,
   MovieDetails,
   MoviePage,
   MovieSummary,
@@ -31,6 +32,7 @@ import { accessTokenStore } from './token-store';
 export type {
   AuthTokens,
   Credentials,
+  ManagedPlayback,
   MovieDetails,
   MoviePage,
   MovieSummary,
@@ -42,6 +44,23 @@ export type {
 };
 
 export type CatalogHome = { rails: Array<CatalogRail> };
+
+/**
+ * A playback response is either a managed version-pinned grant (with a media session
+ * and short-lived token) or the legacy manifest/resume payload for local fixtures.
+ */
+export type PlaybackGrant = ManagedPlayback | Playback;
+
+export type MediaTokenResponse = {
+  mediaToken: string;
+  mediaTokenExpiresAt: string;
+};
+
+/** Progress payload: a managed session sends its session and pinned media version. */
+export type ProgressPayload = ProgressUpdate & {
+  sessionId?: string;
+  mediaVersionId?: string;
+};
 
 export class ProblemError extends Error {
   readonly problem: Problem;
@@ -64,8 +83,9 @@ export interface StreamingApi {
   watchlist(page?: number, size?: number): Promise<MoviePage>;
   addToWatchlist(movieId: string): Promise<void>;
   removeFromWatchlist(movieId: string): Promise<void>;
-  playback(movieId: string): Promise<Playback>;
-  updateProgress(movieId: string, progress: ProgressUpdate): Promise<Progress>;
+  playback(movieId: string): Promise<PlaybackGrant>;
+  updateProgress(movieId: string, progress: ProgressPayload): Promise<Progress>;
+  mediaToken(sessionId: string): Promise<MediaTokenResponse>;
 }
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
@@ -116,12 +136,29 @@ function remember(tokens: AuthTokens): AuthTokens {
   return tokens;
 }
 
-async function refreshSession(): Promise<AuthTokens> {
-  const tokens = await call(async () => (await generatedRefresh({ throwOnError: true })).data);
-  return remember(tokens);
+type AuthUserListener = (user: User) => void;
+const authUserListeners = new Set<AuthUserListener>();
+
+/** Subscribe to the user carried by a silent access-token refresh. */
+export function subscribeAuthUser(listener: AuthUserListener): () => void {
+  authUserListeners.add(listener);
+  return () => {
+    authUserListeners.delete(listener);
+  };
 }
 
-async function withAuthRetry<T>(request: () => Promise<T>): Promise<T> {
+export function notifyAuthUser(user: User): void {
+  authUserListeners.forEach((listener) => listener(user));
+}
+
+async function refreshSession(): Promise<AuthTokens> {
+  const tokens = await call(async () => (await generatedRefresh({ throwOnError: true })).data);
+  remember(tokens);
+  notifyAuthUser(tokens.user);
+  return tokens;
+}
+
+export async function withAuthRetry<T>(request: () => Promise<T>): Promise<T> {
   try {
     return await call(request);
   } catch (error) {
@@ -134,6 +171,44 @@ async function withAuthRetry<T>(request: () => Promise<T>): Promise<T> {
     }
     return call(request);
   }
+}
+
+async function problemFromResponse(response: Response): Promise<ProblemError> {
+  let problem: unknown = null;
+  try {
+    problem = await response.json();
+  } catch {
+    problem = null;
+  }
+  if (isProblem(problem)) return new ProblemError(problem);
+
+  return new ProblemError({
+    type: 'about:blank',
+    title: response.statusText || 'Playback session unavailable',
+    status: response.status,
+    detail: 'We could not refresh the playback session. Please try again.',
+    requestId: 'unavailable',
+    code: 'MEDIA_TOKEN_ERROR',
+  });
+}
+
+/**
+ * The generated client does not describe the media token operation yet, so this
+ * call mirrors the generated adapter: in-memory bearer token, cookie credentials
+ * and RFC 9457 problem handling.
+ */
+async function requestMediaToken(sessionId: string): Promise<MediaTokenResponse> {
+  const headers = new Headers({ Accept: 'application/json' });
+  const token = accessTokenStore.get();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+
+  const response = await fetch(`${apiBaseUrl}/me/playback-sessions/${sessionId}/token`, {
+    method: 'POST',
+    credentials: 'include',
+    headers,
+  });
+  if (!response.ok) throw await problemFromResponse(response);
+  return await response.json() as MediaTokenResponse;
 }
 
 export const streamingApi: StreamingApi = {
@@ -214,4 +289,6 @@ export const streamingApi: StreamingApi = {
     path: { movieId },
     throwOnError: true,
   })).data),
+
+  mediaToken: (sessionId) => withAuthRetry(() => requestMediaToken(sessionId)),
 };

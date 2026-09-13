@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 @SpringBootTest(classes = MediaStreamingApplication.class)
+@org.springframework.test.context.ActiveProfiles("test")
 @EnabledIfSystemProperty(named = "catalog.external-it", matches = "true")
 @TestPropertySource(properties = {
         "spring.datasource.url=${catalog.jdbc-url:jdbc:postgresql://host.docker.internal:5432/media_streaming}",

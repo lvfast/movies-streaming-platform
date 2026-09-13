@@ -24,8 +24,11 @@ class AuthHttpTest {
     @BeforeEach
     void setUp() {
         auth = org.mockito.Mockito.mock(AuthService.class);
+        RoleService roles = org.mockito.Mockito.mock(RoleService.class);
+        org.mockito.Mockito.when(roles.roles(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(java.util.Set.of("USER"));
         AuthController controller = new AuthController(
-                auth, "__Host-refresh_token", true, Duration.ofDays(7));
+                auth, roles, "__Host-refresh_token", true, Duration.ofDays(7));
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new ApiExceptionHandler())
                 .addFilters(new RequestIdFilter())
@@ -51,6 +54,7 @@ class AuthHttpTest {
                 .andExpect(jsonPath("$.accessToken").value("access"))
                 .andExpect(jsonPath("$.expiresIn").value(900))
                 .andExpect(jsonPath("$.user.username").value("demo"))
+                .andExpect(jsonPath("$.user.roles[0]").value("USER"))
                 .andExpect(jsonPath("$.refreshToken").doesNotExist());
     }
 

@@ -54,6 +54,10 @@ class ObservabilitySecurityTest {
     static class Config {
         @Bean AuthRateLimiter limiter() { return mock(AuthRateLimiter.class); }
         @Bean JwtDecoder decoder() { return mock(JwtDecoder.class); }
+        @Bean RoleService roleService() { return mock(RoleService.class); }
+        @Bean com.lvfast.streaming.media.job.WorkerAccess workerAccess() {
+            return mock(com.lvfast.streaming.media.job.WorkerAccess.class);
+        }
     }
 
     @RestController static class Endpoints {

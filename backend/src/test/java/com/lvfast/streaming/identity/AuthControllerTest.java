@@ -15,11 +15,13 @@ class AuthControllerTest {
     @Test
     void registerSetsTheRefreshTokenOnlyInAStrictHostCookie() {
         AuthService auth = org.mockito.Mockito.mock(AuthService.class);
+        RoleService roles = org.mockito.Mockito.mock(RoleService.class);
+        when(roles.roles(org.mockito.ArgumentMatchers.any())).thenReturn(java.util.Set.of("USER"));
         UserAccount user = UserAccount.register("demo", "hash", Instant.EPOCH);
         when(auth.register("demo", "LongEnough9X"))
                 .thenReturn(new AuthSession("access", "refresh-secret", 900, user));
         AuthController controller = new AuthController(
-                auth, "__Host-refresh_token", true, Duration.ofDays(7));
+                auth, roles, "__Host-refresh_token", true, Duration.ofDays(7));
 
         ResponseEntity<AuthController.AuthResponse> response = controller.register(
                 new AuthController.CredentialsRequest("demo", "LongEnough9X"));

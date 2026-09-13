@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import { useApi } from '../api/api-context';
+import { subscribeAuthUser } from '../api/streaming-api';
 import type { Credentials, User } from '../api/streaming-api';
 
 type SessionStatus = 'booting' | 'guest' | 'authenticated';
@@ -16,6 +17,7 @@ type AuthMode = 'login' | 'register';
 interface SessionContextValue {
   status: SessionStatus;
   user: User | null;
+  isAdmin: boolean;
   authDialogOpen: boolean;
   authMode: AuthMode;
   openAuth(mode?: AuthMode): void;
@@ -51,6 +53,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
   }, [api]);
 
+  useEffect(() => subscribeAuthUser((refreshedUser) => {
+    setUser(refreshedUser);
+    setStatus('authenticated');
+  }), []);
+
   const openAuth = useCallback((mode: AuthMode = 'login') => {
     setAuthMode(mode);
     setAuthDialogOpen(true);
@@ -79,6 +86,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const value = useMemo<SessionContextValue>(() => ({
     status,
     user,
+    isAdmin: user?.roles.includes('ADMIN') ?? false,
     authDialogOpen,
     authMode,
     openAuth,

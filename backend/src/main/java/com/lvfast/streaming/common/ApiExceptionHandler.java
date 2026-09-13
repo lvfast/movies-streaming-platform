@@ -1,5 +1,10 @@
 package com.lvfast.streaming.common;
 
+import com.lvfast.streaming.administration.AdminValidationException;
+import com.lvfast.streaming.administration.IfMatchRequiredException;
+import com.lvfast.streaming.administration.PublicationRejectedException;
+import com.lvfast.streaming.administration.SlugUnavailableException;
+import com.lvfast.streaming.administration.StaleRevisionException;
 import com.lvfast.streaming.catalog.CatalogValidationException;
 import com.lvfast.streaming.catalog.MovieNotFoundException;
 import com.lvfast.streaming.identity.IdentityValidationException;
@@ -9,6 +14,16 @@ import com.lvfast.streaming.identity.RateLimitExceededException;
 import com.lvfast.streaming.identity.RefreshTokenReuseException;
 import com.lvfast.streaming.identity.UsernameUnavailableException;
 import com.lvfast.streaming.library.LibraryValidationException;
+import com.lvfast.streaming.media.MediaAssetNotFoundException;
+import com.lvfast.streaming.media.job.JobStateException;
+import com.lvfast.streaming.media.job.LeaseLostException;
+import com.lvfast.streaming.media.job.MediaJobNotFoundException;
+import com.lvfast.streaming.media.storage.StorageUnavailableException;
+import com.lvfast.streaming.media.upload.MediaValidationException;
+import com.lvfast.streaming.media.upload.UploadNotFoundException;
+import com.lvfast.streaming.media.upload.UploadSizeExceededException;
+import com.lvfast.streaming.media.upload.UploadStateException;
+import com.lvfast.streaming.playback.PlaybackSessionException;
 import com.lvfast.streaming.playback.ProgressValidationException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -125,6 +140,83 @@ public class ApiExceptionHandler {
     public ProblemDetail rateLimited(
             RateLimitExceededException exception, HttpServletRequest request) {
         return problem(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMITED", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(AdminValidationException.class)
+    public ProblemDetail adminValidation(AdminValidationException exception, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(SlugUnavailableException.class)
+    public ProblemDetail slugUnavailable(SlugUnavailableException exception, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "SLUG_UNAVAILABLE", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(StaleRevisionException.class)
+    public ProblemDetail staleRevision(StaleRevisionException exception, HttpServletRequest request) {
+        return problem(HttpStatus.PRECONDITION_FAILED, "STALE_REVISION", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(IfMatchRequiredException.class)
+    public ProblemDetail ifMatchRequired(IfMatchRequiredException exception, HttpServletRequest request) {
+        return problem(HttpStatus.PRECONDITION_REQUIRED, "IF_MATCH_REQUIRED", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(MediaValidationException.class)
+    public ProblemDetail mediaValidation(MediaValidationException exception, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(UploadSizeExceededException.class)
+    public ProblemDetail uploadSizeExceeded(UploadSizeExceededException exception, HttpServletRequest request) {
+        return problem(HttpStatus.PAYLOAD_TOO_LARGE, "UPLOAD_SIZE_EXCEEDED", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(UploadNotFoundException.class)
+    public ProblemDetail uploadNotFound(UploadNotFoundException exception, HttpServletRequest request) {
+        return problem(HttpStatus.NOT_FOUND, "UPLOAD_NOT_FOUND", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(UploadStateException.class)
+    public ProblemDetail uploadState(UploadStateException exception, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "UPLOAD_STATE_CONFLICT", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(LeaseLostException.class)
+    public ProblemDetail leaseLost(LeaseLostException exception, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "LEASE_LOST", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(MediaJobNotFoundException.class)
+    public ProblemDetail mediaJobNotFound(MediaJobNotFoundException exception, HttpServletRequest request) {
+        return problem(HttpStatus.NOT_FOUND, "JOB_NOT_FOUND", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(MediaAssetNotFoundException.class)
+    public ProblemDetail mediaAssetNotFound(MediaAssetNotFoundException exception, HttpServletRequest request) {
+        return problem(HttpStatus.NOT_FOUND, "ASSET_NOT_FOUND", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(JobStateException.class)
+    public ProblemDetail jobState(JobStateException exception, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "JOB_STATE_CONFLICT", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(StorageUnavailableException.class)
+    public ProblemDetail storageUnavailable(StorageUnavailableException exception, HttpServletRequest request) {
+        return problem(HttpStatus.SERVICE_UNAVAILABLE, "STORAGE_UNAVAILABLE", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(PublicationRejectedException.class)
+    public ProblemDetail publicationRejected(
+            PublicationRejectedException exception, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "PUBLICATION_REJECTED", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(PlaybackSessionException.class)
+    public ProblemDetail playbackSession(
+            PlaybackSessionException exception, HttpServletRequest request) {
+        return problem(HttpStatus.NOT_FOUND, "PLAYBACK_SESSION_NOT_FOUND", exception.getMessage(), request);
     }
 
     private ProblemDetail problem(

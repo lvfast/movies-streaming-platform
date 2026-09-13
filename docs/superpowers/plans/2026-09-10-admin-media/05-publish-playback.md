@@ -107,4 +107,27 @@ assertThat(decoded.getClaimAsString("prefix")).endsWith(attemptId + "/");
 
 Require fresh results for `PublicationPlaybackTest`, `MediaTokenTest`, `gateway.test.ts`, the two frontend playback tests, OpenAPI contract and the one local browser smoke. Run existing `PlaybackTestcontainersTest` only if its legacy code path changed after the focused tests.
 
+Review follow-up (this session): the review asked for at least two regression tests before keeping
+`DONE`. Both were added, and both found a real defect:
+
+- `MediaTokenTest.progressResumesAcrossSessionsForTheSameVersionAndIsNotInheritedByANewVersion` found
+  that managed playback always resumed at 0, because the resume query filtered on the brand-new
+  session id (`JdbcMediaSessionRepository.resumePosition`); the query now resolves the viewer's single
+  progress row by the pinned media version.
+- `tests/media-pipeline/test_playback.py` now drives the production React build through the production
+  Nginx configuration against a genuinely cross-origin gateway, which found that the CSP pinned
+  `connect-src 'self'` and that the frontend image was built without any media origin. The shipped
+  Nginx config is now `frontend/nginx.conf.template` + `frontend/docker-entrypoint.d/05-render-nginx-config.sh`
+  rendered from `MEDIA_ORIGIN`, the image takes `VITE_MEDIA_BASE_URL`, and the player resolves the
+  backend's root-relative manifest onto that origin or reports a configuration error.
+
+The remaining review items are covered by
+`PublicationPlaybackTest.publishRejectsIncompleteMetadataAndNonReadyMedia`,
+`publishRejectsArtworkThatIsForeignUnreadyOrOfTheWrongKind`,
+`anAlreadyPublishedMovieSurvivesARefusedPublishUntouched`,
+`aFailureAfterPromotionRollsBackLifecycleProjectionAuditAndPromotionLog`,
+`archivedMoviesDenyPlaybackDirectlyAndRestoreNeverRepublishes`,
+`MediaTokenTest.anExpiredSessionIsDeniedForBothRefreshAndProgress` and
+`MediaTokenTest.previewRefreshStaysAdminOwnedAndStopsWhenTheRoleIsRevoked`.
+
 Commit explicit P5 paths with message `feat(admin-media): complete P5 protected playback` when committing is authorized.

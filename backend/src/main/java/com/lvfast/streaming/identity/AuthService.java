@@ -10,12 +10,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 public class AuthService {
 
+    private static final String USER_ROLE = "USER";
+
     private final UserAccountRepository users;
     private final RefreshTokenSessionRepository sessions;
     private final CredentialsPolicy credentialsPolicy;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenCodec refreshTokens;
     private final AccessTokenIssuer accessTokens;
+    private final RoleService roles;
     private final Clock clock;
     private final Duration accessTokenTtl;
     private final Duration refreshTokenTtl;
@@ -27,6 +30,7 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             RefreshTokenCodec refreshTokens,
             AccessTokenIssuer accessTokens,
+            RoleService roles,
             Clock clock,
             Duration accessTokenTtl,
             Duration refreshTokenTtl) {
@@ -36,6 +40,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.refreshTokens = refreshTokens;
         this.accessTokens = accessTokens;
+        this.roles = roles;
         this.clock = clock;
         this.accessTokenTtl = accessTokenTtl;
         this.refreshTokenTtl = refreshTokenTtl;
@@ -56,6 +61,7 @@ public class AuthService {
         } catch (DataIntegrityViolationException duplicateUsername) {
             throw new UsernameUnavailableException();
         }
+        roles.grant(user.id(), USER_ROLE);
         return issueSession(user, UUID.randomUUID(), now);
     }
 
@@ -98,7 +104,7 @@ public class AuthService {
         UserAccount user = users.findById(parent.userId())
                 .orElseThrow(() -> new InvalidRefreshTokenException("refresh token user no longer exists"));
         return new AuthSession(
-                accessTokens.issue(user, now, accessTokenTtl),
+                accessTokens.issue(user, roles.roles(user.id()), now, accessTokenTtl),
                 childRawToken,
                 accessTokenTtl.toSeconds(),
                 user);
@@ -125,7 +131,7 @@ public class AuthService {
                 now.plus(refreshTokenTtl),
                 now));
         return new AuthSession(
-                accessTokens.issue(user, now, accessTokenTtl),
+                accessTokens.issue(user, roles.roles(user.id()), now, accessTokenTtl),
                 rawRefreshToken,
                 accessTokenTtl.toSeconds(),
                 user);

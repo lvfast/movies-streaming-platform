@@ -19,10 +19,10 @@ public class Movie {
     @Column(nullable = false) private String title;
     @Column(nullable = false) private String synopsis;
     @Column(name = "release_year", nullable = false) private short releaseYear;
-    @Column(name = "runtime_seconds", nullable = false) private int runtimeSeconds;
+    @Column(name = "runtime_seconds") private Integer runtimeSeconds;
     @Column(name = "maturity_rating", nullable = false) private String maturityRating;
-    @Column(name = "poster_url", nullable = false) private String posterUrl;
-    @Column(name = "backdrop_url", nullable = false) private String backdropUrl;
+    @Column(name = "poster_url") private String posterUrl;
+    @Column(name = "backdrop_url") private String backdropUrl;
     @Column(name = "hls_manifest_url") private String hlsManifestUrl;
     @Column(nullable = false) private boolean featured;
     @Column(nullable = false) private boolean published;
