@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAdminApi } from '../../api/api-context';
 import {
   RevisionConflictError,
@@ -147,6 +147,12 @@ export function MovieEditorPage() {
     <main className="admin-page">
       <header className="admin-page__header">
         <h1>{isNew ? 'New film' : movie?.title}</h1>
+        {!isNew && movie ? (
+          <div className="admin-page__actions">
+            <Link className="button button--ghost" to={`/admin/movies/${movie.id}/uploads`}>Uploads</Link>
+            <Link className="button button--primary" to={`/admin/movies/${movie.id}/review`}>Review film</Link>
+          </div>
+        ) : null}
       </header>
 
       {conflict ? <RevisionConflict onReload={() => void reloadLatest()} /> : null}

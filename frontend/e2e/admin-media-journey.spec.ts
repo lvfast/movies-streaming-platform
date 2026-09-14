@@ -255,7 +255,8 @@ test('complete admin and viewer journey', async ({ page, request, browser }) => 
   });
 
   await test.step('step 3: upload poster, backdrop and video, interrupting and resuming the video', async () => {
-    await page.goto(`/admin/movies/${movieId}/uploads`);
+    await page.getByRole('link', { name: 'Uploads' }).click();
+    await expect(page.getByRole('heading', { name: 'Upload media' })).toBeVisible();
     await uploadThroughUi(page, 'POSTER', 'poster.jpg');
     await uploadThroughUi(page, 'BACKDROP', 'backdrop.jpg');
     videoJobId = await uploadThroughUi(page, 'VIDEO', 'original.mp4', { resume: true });

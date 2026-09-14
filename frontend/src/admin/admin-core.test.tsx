@@ -325,6 +325,17 @@ describe('Movie editor', () => {
     expect(await screen.findByText(/changes saved/i)).toBeVisible();
   });
 
+  it('links an existing film to its uploads and review pages', async () => {
+    const api = createAdminApi();
+    renderAdmin(api, `/admin/movies/${adminMovie.id}`, adminStreaming());
+
+    await screen.findByDisplayValue('Starlight Archive');
+    expect(screen.getByRole('link', { name: /^uploads$/i }))
+      .toHaveAttribute('href', `/admin/movies/${adminMovie.id}/uploads`);
+    expect(screen.getByRole('link', { name: /review film/i }))
+      .toHaveAttribute('href', `/admin/movies/${adminMovie.id}/review`);
+  });
+
   it('locks the slug once the film has been published', async () => {
     const published = { ...adminMovie, lifecycle: 'PUBLISHED' as const, firstPublishedAt: '2026-09-10T00:00:00.000Z' };
     const api = createAdminApi({ getMovie: vi.fn().mockResolvedValue({ data: published, revision: 9 }) });
