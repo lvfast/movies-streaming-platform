@@ -28,6 +28,8 @@ jobs:
             dockerfile: backend/Dockerfile
           - component: frontend
             dockerfile: frontend/Dockerfile
+          - component: transcoder
+            dockerfile: transcoder/Dockerfile
     steps:
       - uses: actions/checkout@v6
       - uses: docker/setup-buildx-action@v4
@@ -61,6 +63,7 @@ jobs:
             APP_VERSION=${{ github.ref_name }}
             VCS_REF=${{ github.sha }}
             VCS_URL=${{ github.server_url }}/${{ github.repository }}
+            ${{ matrix.component == 'frontend' && format('VITE_MEDIA_BASE_URL={0}', secrets.VITE_MEDIA_BASE_URL) || '' }}
           cache-from: type=gha,scope=${{ matrix.component }}
           cache-to: type=gha,mode=max,scope=${{ matrix.component }}
       - name: Attest image provenance

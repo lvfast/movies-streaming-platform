@@ -119,6 +119,9 @@ jobs:
           - component: frontend
             dockerfile: frontend/Dockerfile
             image: media-streaming-frontend:ci
+          - component: transcoder
+            dockerfile: transcoder/Dockerfile
+            image: media-streaming-transcoder:ci
     steps:
       - uses: actions/checkout@v6
       - uses: docker/setup-buildx-action@v4
