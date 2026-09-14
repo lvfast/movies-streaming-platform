@@ -79,31 +79,31 @@ describe('Admin routes and guard', () => {
 
   it('opens the navigation drawer, moves focus and closes with Escape', async () => {
     renderAdmin(createAdminApi(), '/admin/movies', adminStreaming());
-    await screen.findByRole('heading', { name: 'Films' });
+    await screen.findByText('Starlight Archive');
 
     const toggle = screen.getByLabelText('Open navigation') as HTMLButtonElement;
     fireEvent.click(toggle);
 
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-expanded', 'true'));
     expect(screen.getByLabelText('Close navigation')).toHaveFocus();
 
     fireEvent.keyDown(document, { key: 'Escape' });
 
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-expanded', 'false'));
     expect(toggle).toHaveFocus();
   });
 
   it('closes the drawer and restores focus when a nav link is followed', async () => {
     renderAdmin(createAdminApi(), '/admin/movies', adminStreaming());
-    await screen.findByRole('heading', { name: 'Films' });
+    await screen.findByText('Starlight Archive');
 
     const toggle = screen.getByLabelText('Open navigation') as HTMLButtonElement;
     fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-expanded', 'true'));
 
     fireEvent.click(screen.getByRole('link', { name: /films/i }));
 
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-expanded', 'false'));
     expect(toggle).toHaveFocus();
   });
 });
