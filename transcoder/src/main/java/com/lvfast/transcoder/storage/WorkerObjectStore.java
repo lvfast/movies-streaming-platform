@@ -1,6 +1,9 @@
 package com.lvfast.transcoder.storage;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -16,6 +19,18 @@ public interface WorkerObjectStore {
 
     /** Returns {@code null} when the key does not exist. */
     Head head(String role, String key);
+
+    /**
+     * Streams the object into {@code target}. Implementations that can read ranges override this
+     * with a parallel download for large objects; the default streams once with a large buffer so a
+     * slow link is not limited by the 8 KiB copy used elsewhere.
+     */
+    default void download(String role, String key, Path target) throws IOException {
+        try (InputStream input = read(role, key);
+                OutputStream output = Files.newOutputStream(target)) {
+            StorageStreams.copy(input, output);
+        }
+    }
 
     record Head(long sizeBytes, String contentType) {
     }
