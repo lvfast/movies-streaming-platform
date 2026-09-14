@@ -16,7 +16,6 @@ import com.lvfast.transcoder.probe.VideoProbe;
 import com.lvfast.transcoder.storage.StorageUnavailableException;
 import com.lvfast.transcoder.storage.WorkerObjectStore;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -150,8 +149,8 @@ public class DefaultJobExecutor implements JobExecutor {
 
     private Path download(ClaimResult claim, Path workDir) {
         Path source = workDir.resolve("source");
-        try (InputStream input = store.read(SOURCE_ROLE, claim.source())) {
-            Files.copy(input, source);
+        try {
+            store.download(SOURCE_ROLE, claim.source(), source);
         } catch (IOException failure) {
             throw new ProcessingFailure("SOURCE_INVALID", "Source could not be downloaded");
         }
