@@ -6,14 +6,21 @@ services:
     command:
       - |
         set -eu
+        umask 077
         if [ ! -s /keys/jwt-private.pem ]; then
-          umask 077
           openssl genpkey -quiet -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /keys/jwt-private.pem
         fi
         if [ ! -s /keys/jwt-public.pem ]; then
           openssl pkey -in /keys/jwt-private.pem -pubout -out /keys/jwt-public.pem
         fi
-        chmod 0444 /keys/jwt-private.pem /keys/jwt-public.pem
+        # Media tokens use a dedicated key pair so a media token can never verify as a login token.
+        if [ ! -s /keys/media-private.pem ]; then
+          openssl genpkey -quiet -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /keys/media-private.pem
+        fi
+        if [ ! -s /keys/media-public.pem ]; then
+          openssl pkey -in /keys/media-private.pem -pubout -out /keys/media-public.pem
+        fi
+        chmod 0444 /keys/*.pem
     volumes:
       - jwt-keys:/keys
     read_only: true
@@ -27,6 +34,9 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    environment:
+      MEDIA_JWT_PRIVATE_KEY: file:/run/secrets/media-private.pem
+      MEDIA_JWT_PUBLIC_KEY: file:/run/secrets/media-public.pem
     depends_on:
       jwt-keygen:
         condition: service_completed_successfully
@@ -37,6 +47,15 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        # The bundle and the CSP must name the same media origin, or protected playback is either
+        # blocked by connect-src or rejected with 401 by the gateway.
+        VITE_MEDIA_BASE_URL: ${VITE_MEDIA_BASE_URL:-}
+    environment:
+      MEDIA_ORIGIN: ${MEDIA_ORIGIN:-}
+      # The CSP also names the browser-facing storage origin so Admin uploads can PUT to presigned
+      # source-bucket URLs; empty keeps the strict same-origin policy.
+      MEDIA_STORAGE_ORIGIN: ${MEDIA_STORAGE_ORIGIN:-}
     ports:
       - "127.0.0.1:8080:8080"
 

@@ -21,6 +21,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(classes = MediaStreamingApplication.class, properties = "app.auth.enabled=false")
+@org.springframework.test.context.ActiveProfiles("test")
 @Testcontainers(disabledWithoutDocker = true)
 class PlaybackTestcontainersTest {
 
@@ -29,6 +30,8 @@ class PlaybackTestcontainersTest {
     private static final UUID UNPLAYABLE_MOVIE = UUID.fromString("00000000-0000-0000-0000-000000000004");
     private static final Instant EARLIER = Instant.parse("2026-09-07T00:00:00Z");
     private static final Instant LATER = Instant.parse("2026-09-07T00:01:00Z");
+    private static final com.lvfast.streaming.support.TestKeyFiles.Pair PLAYBACK_KEYS =
+            com.lvfast.streaming.support.TestKeyFiles.generate("playback-media-jwt");
 
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
@@ -43,6 +46,10 @@ class PlaybackTestcontainersTest {
         registry.add("spring.datasource.password", POSTGRES::getPassword);
         registry.add("spring.data.redis.host", REDIS::getHost);
         registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
+        registry.add("app.media.signing.private-key-location",
+                () -> PLAYBACK_KEYS.privateKeyLocation());
+        registry.add("app.media.signing.public-key-location",
+                () -> PLAYBACK_KEYS.publicKeyLocation());
     }
 
     @Autowired JdbcTemplate jdbc;

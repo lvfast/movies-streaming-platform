@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lvfast-media-gateway",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-08-01",
+  "r2_buckets": [
+    {
+      "binding": "DELIVERY",
+      "bucket_name": "media-delivery"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  },
+  // Non-secret configuration. ALLOWED_ORIGINS is a comma-separated origin allowlist and is
+  // empty by default, which means no cross-origin browser request is granted CORS access.
+  "vars": {
+    "JWT_ISSUER": "lvfast-media-backend",
+    "JWT_AUDIENCE": "lvfast-media",
+    "ALLOWED_ORIGINS": ""
+  }
+  // Secret configuration is never stored in this file. Set the verification key with:
+  //   wrangler secret put JWT_PUBLIC_JWK   (single public JWK JSON)
+  //   wrangler secret put JWT_PUBLIC_JWKS  (JWK Set JSON for key rotation, {"keys":[...]})
+  // Both are public verification keys only. The Worker never holds the signing private key
+  // or any S3/R2 credential, and no Cloudflare account id or route is declared here.
+}

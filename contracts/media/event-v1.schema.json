@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lvfast.dev/contracts/media/event-v1.schema.json",
+  "title": "Media processing result event",
+  "description": "A worker result event published to the media results exchange. The backend deduplicates by eventId and only accepts results for the current claimed attempt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "eventId", "type", "jobId", "attemptId", "sequence", "occurredAt", "payload"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "eventId": { "type": "string", "format": "uuid" },
+    "type": { "enum": ["media.progress.v1", "media.completed.v1", "media.failed.v1"] },
+    "jobId": { "type": "string", "format": "uuid" },
+    "attemptId": { "type": "string", "format": "uuid" },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "payload": {
+      "oneOf": [
+        { "$ref": "#/$defs/progress" },
+        { "$ref": "#/$defs/completed" },
+        { "$ref": "#/$defs/failed" }
+      ]
+    }
+  },
+  "$defs": {
+    "progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "percent"],
+      "properties": {
+        "stage": { "enum": ["DOWNLOADING", "PROBING", "ENCODING", "UPLOADING", "VALIDATING"] },
+        "percent": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "completed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactKey"],
+      "properties": {
+        "artifactKey": { "type": "string", "minLength": 1 }
+      }
+    },
+    "failed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "summary"],
+      "properties": {
+        "code": {
+          "enum": [
+            "SOURCE_INVALID",
+            "SOURCE_UNSUPPORTED",
+            "STORAGE_UNAVAILABLE",
+            "PROCESS_TIMEOUT",
+            "DISK_EXHAUSTED",
+            "LEASE_LOST",
+            "OUTPUT_INVALID",
+            "INTERNAL_ERROR"
+          ]
+        },
+        "summary": { "type": "string" }
+      }
+    }
+  }
+}

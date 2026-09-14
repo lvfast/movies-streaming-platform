@@ -72,7 +72,7 @@ class Task4RedisDegradedTest {
                 .build();
         Instant now = Instant.now();
         UserAccount user = users.save(UserAccount.register("redis_down_user", "test-hash", now));
-        accessToken = accessTokens.issue(user, now.minusSeconds(1), Duration.ofMinutes(15));
+        accessToken = accessTokens.issue(user, java.util.Set.of("USER"), now.minusSeconds(1), Duration.ofMinutes(15));
     }
 
     @Test

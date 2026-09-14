@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: media-transcoder
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:media_streaming}
+    password: ${RABBITMQ_PASSWORD:local-only-change-me}
+    publisher-confirm-type: correlated
+    listener:
+      simple:
+        prefetch: 1
+        concurrency: 1
+        acknowledge-mode: manual
+        default-requeue-rejected: false
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+
+app:
+  transcoder:
+    backend-base-url: ${BACKEND_BASE_URL:http://localhost:8080}
+    worker-id: ${WORKER_ID:worker-1}
+    credential: ${MEDIA_WORKER_CREDENTIAL:}
+    ffmpeg-path: ${FFMPEG_PATH:ffmpeg}
+    ffprobe-path: ${FFPROBE_PATH:ffprobe}
+    work-dir: ${TRANSCODER_WORK_DIR:${java.io.tmpdir}/transcoder}
+    lease-heartbeat-interval: ${TRANSCODER_LEASE_HEARTBEAT_INTERVAL:PT30S}
+    process-timeout: ${TRANSCODER_PROCESS_TIMEOUT:PT15M}
+    storage:
+      source:
+        bucket: ${MEDIA_SOURCE_BUCKET:media-source}
+        endpoint: ${S3_ENDPOINT:}
+        region: ${S3_REGION:auto}
+        access-key: ${S3_ACCESS_KEY:}
+        secret-key: ${S3_SECRET_KEY:}
+      delivery:
+        bucket: ${MEDIA_DELIVERY_BUCKET:media-delivery}
+        endpoint: ${S3_ENDPOINT:}
+        region: ${S3_REGION:auto}
+        access-key: ${S3_ACCESS_KEY:}
+        secret-key: ${S3_SECRET_KEY:}
+
+logging:
+  pattern:
+    level: "%5p [worker=%X{workerId:-}]"

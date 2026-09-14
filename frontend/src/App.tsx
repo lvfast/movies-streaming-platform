@@ -15,6 +15,10 @@ const PlayerPage = lazy(() => import('./pages/player-page').then((module) => ({
   default: module.PlayerPage,
 })));
 
+const AdminRoutes = lazy(() => import('./admin/admin-routes').then((module) => ({
+  default: module.AdminRoutes,
+})));
+
 export function App() {
   return (
     <SessionProvider>
@@ -28,10 +32,11 @@ function AppRoutes() {
   const location = useLocation();
   const playerRoute = location.pathname.startsWith('/watch/');
   const landingRoute = location.pathname === '/';
+  const adminRoute = location.pathname.startsWith('/admin');
 
   return (
     <div className="app-shell">
-      {!playerRoute && !landingRoute ? <Header /> : null}
+      {!playerRoute && !landingRoute && !adminRoute ? <Header /> : null}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/browse" element={<HomePage />} />
@@ -43,6 +48,14 @@ function AppRoutes() {
           element={(
             <Suspense fallback={<main className="player-page player-page--center"><LoadingState label="Preparing the player" /></main>}>
               <PlayerPage />
+            </Suspense>
+          )}
+        />
+        <Route
+          path="/admin/*"
+          element={(
+            <Suspense fallback={<main className="admin-page admin-page--center"><LoadingState label="Loading the dashboard" /></main>}>
+              <AdminRoutes />
             </Suspense>
           )}
         />

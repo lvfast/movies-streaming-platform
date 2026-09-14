@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -28,14 +29,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService auth;
+    private final RoleService roles;
     private final String cookieName;
     private final boolean secureCookie;
     private final Duration refreshTokenTtl;
 
     @Autowired
-    public AuthController(AuthService auth, AuthProperties properties) {
+    public AuthController(AuthService auth, RoleService roles, AuthProperties properties) {
         this(
                 auth,
+                roles,
                 properties.refreshCookieName(),
                 properties.secureCookie(),
                 properties.refreshTokenTtl());
@@ -43,10 +46,12 @@ public class AuthController {
 
     public AuthController(
             AuthService auth,
+            RoleService roles,
             String cookieName,
             boolean secureCookie,
             Duration refreshTokenTtl) {
         this.auth = auth;
+        this.roles = roles;
         this.cookieName = cookieName;
         this.secureCookie = secureCookie;
         this.refreshTokenTtl = refreshTokenTtl;
@@ -78,14 +83,18 @@ public class AuthController {
 
     @GetMapping("/me")
     public UserResponse me(@AuthenticationPrincipal Jwt jwt) {
-        return new UserResponse(UUID.fromString(jwt.getSubject()), jwt.getClaimAsString("username"));
+        UUID userId = UUID.fromString(jwt.getSubject());
+        return new UserResponse(userId, jwt.getClaimAsString("username"), List.copyOf(roles.roles(userId)));
     }
 
     private ResponseEntity<AuthResponse> authenticated(AuthSession session, HttpStatus status) {
         ResponseCookie refreshCookie = cookie(session.refreshToken())
                 .maxAge(refreshTokenTtl)
                 .build();
-        UserResponse user = new UserResponse(session.user().id(), session.user().username());
+        UserResponse user = new UserResponse(
+                session.user().id(),
+                session.user().username(),
+                List.copyOf(roles.roles(session.user().id())));
         return ResponseEntity.status(status)
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(new AuthResponse(session.accessToken(), "Bearer", session.expiresIn(), user));
@@ -116,7 +125,7 @@ public class AuthController {
             @NotBlank @Size(min = 12, max = 128) String password) {
     }
 
-    public record UserResponse(UUID id, String username) {
+    public record UserResponse(UUID id, String username, List<String> roles) {
     }
 
     public record AuthResponse(

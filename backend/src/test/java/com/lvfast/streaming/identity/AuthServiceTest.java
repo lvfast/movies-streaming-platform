@@ -31,6 +31,7 @@ class AuthServiceTest {
     @Mock private RefreshTokenSessionRepository sessions;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private AccessTokenIssuer accessTokens;
+    @Mock private RoleService roles;
 
     private RefreshTokenCodec refreshTokens;
     private AuthService service;
@@ -45,6 +46,7 @@ class AuthServiceTest {
                 passwordEncoder,
                 refreshTokens,
                 accessTokens,
+                roles,
                 Clock.fixed(NOW, ZoneOffset.UTC),
                 Duration.ofMinutes(15),
                 Duration.ofDays(7));
@@ -56,7 +58,8 @@ class AuthServiceTest {
         when(passwordEncoder.encode("LongEnough9X")).thenReturn("argon2-hash");
         when(users.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(accessTokens.issue(any(), eq(NOW), eq(Duration.ofMinutes(15))))
+        when(roles.roles(any())).thenReturn(java.util.Set.of("USER"));
+        when(accessTokens.issue(any(), any(), eq(NOW), eq(Duration.ofMinutes(15))))
                 .thenReturn("signed-access-token");
 
         AuthSession result = service.register("Demo_User", "LongEnough9X");
@@ -65,6 +68,7 @@ class AuthServiceTest {
         verify(users).saveAndFlush(user.capture());
         assertThat(user.getValue().username()).isEqualTo("demo_user");
         assertThat(user.getValue().passwordHash()).isEqualTo("argon2-hash");
+        verify(roles).grant(eq(user.getValue().id()), eq("USER"));
         assertThat(result.accessToken()).isEqualTo("signed-access-token");
         assertThat(result.refreshToken()).isNotBlank();
         assertThat(result.refreshToken()).doesNotContain("=");

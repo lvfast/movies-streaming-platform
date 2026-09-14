@@ -12,6 +12,7 @@ export type Credentials = {
 export type User = {
     id: string;
     username: string;
+    roles: Array<string>;
 };
 
 export type AuthTokens = {
@@ -38,6 +39,154 @@ export type MovieDetails = MovieSummary & {
     playable: boolean;
 };
 
+export type MovieInput = {
+    title: string;
+    slug: string;
+    synopsis?: string;
+    releaseYear: number;
+    maturityRating: 'G' | 'PG' | 'PG-13' | 'R' | 'NC-17' | 'NR';
+    genreIds?: Array<number>;
+    featured: boolean;
+};
+
+export type AdminMovie = {
+    id: string;
+    title: string;
+    slug: string;
+    synopsis: string;
+    releaseYear: number;
+    maturityRating: string;
+    genreIds: Array<number>;
+    featured: boolean;
+    lifecycle: 'DRAFT' | 'PUBLISHED' | 'UNPUBLISHED' | 'ARCHIVED';
+    revision: number;
+    managementMode: 'LEGACY' | 'MANAGED';
+    activeMediaVersionId?: string | null;
+    posterAssetId?: string | null;
+    backdropAssetId?: string | null;
+    runtimeSeconds?: number | null;
+    firstPublishedAt?: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type AdminMoviePage = {
+    items: Array<AdminMovie>;
+    page: number;
+    size: number;
+    total: number;
+};
+
+export type GenreOption = {
+    id: number;
+    slug: string;
+    name: string;
+};
+
+export type UploadInput = {
+    kind: 'VIDEO' | 'POSTER' | 'BACKDROP';
+    fileName: string;
+    contentType: string;
+    sizeBytes: number;
+    resumeFingerprint: string;
+};
+
+export type UploadSession = {
+    id: string;
+    movieId: string;
+    mediaVersionId?: string | null;
+    assetId?: string | null;
+    kind: 'VIDEO' | 'POSTER' | 'BACKDROP';
+    state: 'OPEN' | 'COMPLETING' | 'COMPLETED' | 'ABORTED' | 'EXPIRED' | 'FAILED';
+    partSizeBytes: number;
+    totalParts: number;
+    declaredBytes: number;
+    expiresAt: string;
+    jobId?: string | null;
+};
+
+export type UploadedPart = {
+    partNumber: number;
+    etag: string;
+    sizeBytes: number;
+};
+
+export type UploadedPartPage = {
+    items: Array<UploadedPart>;
+    nextMarker?: number | null;
+};
+
+export type PartSignRequest = {
+    partNumbers: Array<number>;
+};
+
+export type SignedPart = {
+    partNumber: number;
+    url: string;
+    expiresAt: string;
+    headers: {
+        [key: string]: string;
+    };
+};
+
+export type SignedPartList = {
+    items: Array<SignedPart>;
+};
+
+export type MediaVersion = {
+    id: string;
+    movieId: string;
+    state: 'UPLOADING' | 'QUEUED' | 'PROCESSING' | 'READY' | 'FAILED' | 'ABORTED';
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type MediaVersionPage = {
+    items: Array<MediaVersion>;
+    page: number;
+    size: number;
+    total: number;
+};
+
+export type MediaAsset = {
+    id: string;
+    movieId: string;
+    kind: 'POSTER' | 'BACKDROP';
+    state: 'UPLOADING' | 'STORED' | 'PROCESSING' | 'READY' | 'FAILED' | 'ABORTED';
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type MediaAssetPage = {
+    items: Array<MediaAsset>;
+    page: number;
+    size: number;
+    total: number;
+};
+
+export type JobView = {
+    id: string;
+    movieId: string;
+    mediaVersionId?: string | null;
+    assetId?: string | null;
+    kind: 'TRANSCODE' | 'ARTWORK';
+    state: 'QUEUED' | 'RUNNING' | 'RETRY_WAIT' | 'SUCCEEDED' | 'FAILED';
+    attemptNumber: number;
+    progressPercent: number;
+    stage?: string | null;
+    errorCode?: string | null;
+    errorSummary?: string | null;
+    retryAt?: string | null;
+    updatedAt: string;
+};
+
+export type JobPage = {
+    items: Array<JobView>;
+    page: number;
+    size: number;
+    total: number;
+};
+
 export type CatalogRail = {
     key: string;
     title: string;
@@ -57,10 +206,67 @@ export type Playback = {
     resumePositionSeconds: number;
 };
 
+export type ManagedPlayback = {
+    movieId: string;
+    manifestUrl: string;
+    resumePositionSeconds: number;
+    sessionId: string;
+    mediaVersionId: string;
+    mediaToken: string;
+    mediaTokenExpiresAt: string;
+};
+
+export type MediaToken = {
+    mediaToken: string;
+    mediaTokenExpiresAt: string;
+};
+
+export type PublishRequest = {
+    mediaVersionId: string;
+    posterAssetId?: string | null;
+    backdropAssetId?: string | null;
+};
+
+export type ArtworkRequest = {
+    kind: 'POSTER' | 'BACKDROP';
+    assetId: string;
+};
+
+export type AssetPreview = {
+    url: string;
+    expiresAt: string;
+};
+
+export type AuditEvent = {
+    id: number;
+    actorId: string | null;
+    actorType: string;
+    action: string;
+    entityType: string;
+    entityId?: string | null;
+    requestId?: string | null;
+    before: {
+        [key: string]: unknown;
+    };
+    after: {
+        [key: string]: unknown;
+    };
+    createdAt: string;
+};
+
+export type AuditEventPage = {
+    items: Array<AuditEvent>;
+    page: number;
+    size: number;
+    total: number;
+};
+
 export type ProgressUpdate = {
     positionSeconds: number;
     durationSeconds: number;
     clientUpdatedAt: string;
+    sessionId?: string;
+    mediaVersionId?: string;
 };
 
 export type Progress = ProgressUpdate & {
@@ -90,6 +296,18 @@ export type Page = number;
 export type Size = number;
 
 export type MovieId = string;
+
+export type UploadId = string;
+
+export type JobId = string;
+
+export type AssetId = string;
+
+export type SessionId = string;
+
+export type IfMatch = string;
+
+export type IdempotencyKey = string;
 
 export type RegisterData = {
     body: Credentials;
@@ -419,12 +637,78 @@ export type PlaybackError = PlaybackErrors[keyof PlaybackErrors];
 
 export type PlaybackResponses = {
     /**
-     * HLS playback metadata and resume position
+     * Managed movies answer a version-pinned grant with a short-lived media token; legacy fixtures keep the manifest/resume response and omit the managed fields.
      */
-    200: Playback;
+    200: ManagedPlayback | Playback;
 };
 
 export type PlaybackResponse = PlaybackResponses[keyof PlaybackResponses];
+
+export type RefreshMediaTokenData = {
+    body?: never;
+    path: {
+        sessionId: string;
+    };
+    query?: never;
+    url: '/me/playback-sessions/{sessionId}/token';
+};
+
+export type RefreshMediaTokenErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+};
+
+export type RefreshMediaTokenError = RefreshMediaTokenErrors[keyof RefreshMediaTokenErrors];
+
+export type RefreshMediaTokenResponses = {
+    /**
+     * Refreshed media token for an unexpired session of a published movie
+     */
+    200: MediaToken;
+};
+
+export type RefreshMediaTokenResponse = RefreshMediaTokenResponses[keyof RefreshMediaTokenResponses];
+
+export type RefreshPreviewMediaTokenData = {
+    body?: never;
+    path: {
+        sessionId: string;
+    };
+    query?: never;
+    url: '/admin/playback-sessions/{sessionId}/token';
+};
+
+export type RefreshPreviewMediaTokenErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+};
+
+export type RefreshPreviewMediaTokenError = RefreshPreviewMediaTokenErrors[keyof RefreshPreviewMediaTokenErrors];
+
+export type RefreshPreviewMediaTokenResponses = {
+    /**
+     * Refreshed media token for the current ADMIN preview session
+     */
+    200: MediaToken;
+};
+
+export type RefreshPreviewMediaTokenResponse = RefreshPreviewMediaTokenResponses[keyof RefreshPreviewMediaTokenResponses];
 
 export type UpdateProgressData = {
     body: ProgressUpdate;
@@ -460,3 +744,1065 @@ export type UpdateProgressResponses = {
 };
 
 export type UpdateProgressResponse = UpdateProgressResponses[keyof UpdateProgressResponses];
+
+export type AdminListMoviesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+    };
+    url: '/admin/movies';
+};
+
+export type AdminListMoviesErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+};
+
+export type AdminListMoviesError = AdminListMoviesErrors[keyof AdminListMoviesErrors];
+
+export type AdminListMoviesResponses = {
+    /**
+     * Managed and legacy movie page
+     */
+    200: AdminMoviePage;
+};
+
+export type AdminListMoviesResponse = AdminListMoviesResponses[keyof AdminListMoviesResponses];
+
+export type AdminCreateMovieData = {
+    body: MovieInput;
+    headers: {
+        'Idempotency-Key': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/admin/movies';
+};
+
+export type AdminCreateMovieErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    400: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+};
+
+export type AdminCreateMovieError = AdminCreateMovieErrors[keyof AdminCreateMovieErrors];
+
+export type AdminCreateMovieResponses = {
+    /**
+     * Created draft
+     */
+    201: AdminMovie;
+};
+
+export type AdminCreateMovieResponse = AdminCreateMovieResponses[keyof AdminCreateMovieResponses];
+
+export type AdminGetMovieData = {
+    body?: never;
+    path: {
+        movieId: string;
+    };
+    query?: never;
+    url: '/admin/movies/{movieId}';
+};
+
+export type AdminGetMovieErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+};
+
+export type AdminGetMovieError = AdminGetMovieErrors[keyof AdminGetMovieErrors];
+
+export type AdminGetMovieResponses = {
+    /**
+     * Movie with revision
+     */
+    200: AdminMovie;
+};
+
+export type AdminGetMovieResponse = AdminGetMovieResponses[keyof AdminGetMovieResponses];
+
+export type AdminUpdateMovieData = {
+    body: MovieInput;
+    headers: {
+        'If-Match': string;
+    };
+    path: {
+        movieId: string;
+    };
+    query?: never;
+    url: '/admin/movies/{movieId}';
+};
+
+export type AdminUpdateMovieErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    400: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    412: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    428: Problem;
+};
+
+export type AdminUpdateMovieError = AdminUpdateMovieErrors[keyof AdminUpdateMovieErrors];
+
+export type AdminUpdateMovieResponses = {
+    /**
+     * Updated movie
+     */
+    200: AdminMovie;
+};
+
+export type AdminUpdateMovieResponse = AdminUpdateMovieResponses[keyof AdminUpdateMovieResponses];
+
+export type AdminListGenresData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/genres';
+};
+
+export type AdminListGenresErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+};
+
+export type AdminListGenresError = AdminListGenresErrors[keyof AdminListGenresErrors];
+
+export type AdminListGenresResponses = {
+    /**
+     * Available genres
+     */
+    200: {
+        items: Array<GenreOption>;
+    };
+};
+
+export type AdminListGenresResponse = AdminListGenresResponses[keyof AdminListGenresResponses];
+
+export type AdminCreateUploadData = {
+    body: UploadInput;
+    headers: {
+        'Idempotency-Key': string;
+    };
+    path: {
+        movieId: string;
+    };
+    query?: never;
+    url: '/admin/movies/{movieId}/uploads';
+};
+
+export type AdminCreateUploadErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    400: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    413: Problem;
+};
+
+export type AdminCreateUploadError = AdminCreateUploadErrors[keyof AdminCreateUploadErrors];
+
+export type AdminCreateUploadResponses = {
+    /**
+     * OPEN private upload session
+     */
+    201: UploadSession;
+};
+
+export type AdminCreateUploadResponse = AdminCreateUploadResponses[keyof AdminCreateUploadResponses];
+
+export type AdminGetUploadData = {
+    body?: never;
+    path: {
+        uploadId: string;
+    };
+    query?: never;
+    url: '/admin/uploads/{uploadId}';
+};
+
+export type AdminGetUploadErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+};
+
+export type AdminGetUploadError = AdminGetUploadErrors[keyof AdminGetUploadErrors];
+
+export type AdminGetUploadResponses = {
+    /**
+     * Upload session
+     */
+    200: UploadSession;
+};
+
+export type AdminGetUploadResponse = AdminGetUploadResponses[keyof AdminGetUploadResponses];
+
+export type AdminListUploadPartsData = {
+    body?: never;
+    path: {
+        uploadId: string;
+    };
+    query?: {
+        marker?: number;
+    };
+    url: '/admin/uploads/{uploadId}/parts';
+};
+
+export type AdminListUploadPartsErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+};
+
+export type AdminListUploadPartsError = AdminListUploadPartsErrors[keyof AdminListUploadPartsErrors];
+
+export type AdminListUploadPartsResponses = {
+    /**
+     * Authoritative uploaded parts
+     */
+    200: UploadedPartPage;
+};
+
+export type AdminListUploadPartsResponse = AdminListUploadPartsResponses[keyof AdminListUploadPartsResponses];
+
+export type AdminSignUploadPartsData = {
+    body: PartSignRequest;
+    path: {
+        uploadId: string;
+    };
+    query?: never;
+    url: '/admin/uploads/{uploadId}/part-urls';
+};
+
+export type AdminSignUploadPartsErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    400: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+};
+
+export type AdminSignUploadPartsError = AdminSignUploadPartsErrors[keyof AdminSignUploadPartsErrors];
+
+export type AdminSignUploadPartsResponses = {
+    /**
+     * Presigned part URLs
+     */
+    200: SignedPartList;
+};
+
+export type AdminSignUploadPartsResponse = AdminSignUploadPartsResponses[keyof AdminSignUploadPartsResponses];
+
+export type AdminCompleteUploadData = {
+    body?: never;
+    headers: {
+        'Idempotency-Key': string;
+    };
+    path: {
+        uploadId: string;
+    };
+    query?: never;
+    url: '/admin/uploads/{uploadId}/complete';
+};
+
+export type AdminCompleteUploadErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    400: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    503: Problem;
+};
+
+export type AdminCompleteUploadError = AdminCompleteUploadErrors[keyof AdminCompleteUploadErrors];
+
+export type AdminCompleteUploadResponses = {
+    /**
+     * Completed session with the queued job
+     */
+    200: UploadSession;
+};
+
+export type AdminCompleteUploadResponse = AdminCompleteUploadResponses[keyof AdminCompleteUploadResponses];
+
+export type AdminAbortUploadData = {
+    body?: never;
+    path: {
+        uploadId: string;
+    };
+    query?: never;
+    url: '/admin/uploads/{uploadId}/abort';
+};
+
+export type AdminAbortUploadErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+};
+
+export type AdminAbortUploadError = AdminAbortUploadErrors[keyof AdminAbortUploadErrors];
+
+export type AdminAbortUploadResponses = {
+    /**
+     * Aborted upload session
+     */
+    200: UploadSession;
+};
+
+export type AdminAbortUploadResponse = AdminAbortUploadResponses[keyof AdminAbortUploadResponses];
+
+export type AdminListVersionsData = {
+    body?: never;
+    path: {
+        movieId: string;
+    };
+    query?: {
+        page?: number;
+        size?: number;
+    };
+    url: '/admin/movies/{movieId}/versions';
+};
+
+export type AdminListVersionsErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+};
+
+export type AdminListVersionsError = AdminListVersionsErrors[keyof AdminListVersionsErrors];
+
+export type AdminListVersionsResponses = {
+    /**
+     * Movie-scoped media versions
+     */
+    200: MediaVersionPage;
+};
+
+export type AdminListVersionsResponse = AdminListVersionsResponses[keyof AdminListVersionsResponses];
+
+export type AdminListAssetsData = {
+    body?: never;
+    path: {
+        movieId: string;
+    };
+    query?: {
+        page?: number;
+        size?: number;
+    };
+    url: '/admin/movies/{movieId}/assets';
+};
+
+export type AdminListAssetsErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+};
+
+export type AdminListAssetsError = AdminListAssetsErrors[keyof AdminListAssetsErrors];
+
+export type AdminListAssetsResponses = {
+    /**
+     * Movie-scoped artwork assets
+     */
+    200: MediaAssetPage;
+};
+
+export type AdminListAssetsResponse = AdminListAssetsResponses[keyof AdminListAssetsResponses];
+
+export type AdminPreviewAssetData = {
+    body?: never;
+    path: {
+        assetId: string;
+    };
+    query?: never;
+    url: '/admin/assets/{assetId}/preview';
+};
+
+export type AdminPreviewAssetErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+};
+
+export type AdminPreviewAssetError = AdminPreviewAssetErrors[keyof AdminPreviewAssetErrors];
+
+export type AdminPreviewAssetResponses = {
+    /**
+     * Short-lived private read URL for a validated artwork asset
+     */
+    200: AssetPreview;
+};
+
+export type AdminPreviewAssetResponse = AdminPreviewAssetResponses[keyof AdminPreviewAssetResponses];
+
+export type AdminAttachArtworkData = {
+    body: ArtworkRequest;
+    headers: {
+        'If-Match': string;
+    };
+    path: {
+        movieId: string;
+    };
+    query?: never;
+    url: '/admin/movies/{movieId}/artwork';
+};
+
+export type AdminAttachArtworkErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    400: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    412: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    428: Problem;
+};
+
+export type AdminAttachArtworkError = AdminAttachArtworkErrors[keyof AdminAttachArtworkErrors];
+
+export type AdminAttachArtworkResponses = {
+    /**
+     * Movie with the selected artwork pointer
+     */
+    200: AdminMovie;
+};
+
+export type AdminAttachArtworkResponse = AdminAttachArtworkResponses[keyof AdminAttachArtworkResponses];
+
+export type AdminListJobsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+    };
+    url: '/admin/jobs';
+};
+
+export type AdminListJobsErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+};
+
+export type AdminListJobsError = AdminListJobsErrors[keyof AdminListJobsErrors];
+
+export type AdminListJobsResponses = {
+    /**
+     * Processing job page
+     */
+    200: JobPage;
+};
+
+export type AdminListJobsResponse = AdminListJobsResponses[keyof AdminListJobsResponses];
+
+export type AdminGetJobData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/admin/jobs/{jobId}';
+};
+
+export type AdminGetJobErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+};
+
+export type AdminGetJobError = AdminGetJobErrors[keyof AdminGetJobErrors];
+
+export type AdminGetJobResponses = {
+    /**
+     * Processing job
+     */
+    200: JobView;
+};
+
+export type AdminGetJobResponse = AdminGetJobResponses[keyof AdminGetJobResponses];
+
+export type AdminRetryJobData = {
+    body?: never;
+    headers: {
+        'Idempotency-Key': string;
+    };
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/admin/jobs/{jobId}/retry';
+};
+
+export type AdminRetryJobErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    400: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+};
+
+export type AdminRetryJobError = AdminRetryJobErrors[keyof AdminRetryJobErrors];
+
+export type AdminRetryJobResponses = {
+    /**
+     * New queued job targeting the retained source
+     */
+    201: JobView;
+};
+
+export type AdminRetryJobResponse = AdminRetryJobResponses[keyof AdminRetryJobResponses];
+
+export type AdminListAuditData = {
+    body?: never;
+    path?: never;
+    query?: {
+        action?: string;
+        entityType?: string;
+        entityId?: string;
+        page?: number;
+        size?: number;
+    };
+    url: '/admin/audit';
+};
+
+export type AdminListAuditErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    400: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+};
+
+export type AdminListAuditError = AdminListAuditErrors[keyof AdminListAuditErrors];
+
+export type AdminListAuditResponses = {
+    /**
+     * Paged audit history with secret-like fields removed
+     */
+    200: AuditEventPage;
+};
+
+export type AdminListAuditResponse = AdminListAuditResponses[keyof AdminListAuditResponses];
+
+export type AdminPublishMovieData = {
+    body: PublishRequest;
+    headers: {
+        'If-Match': string;
+        'Idempotency-Key': string;
+    };
+    path: {
+        movieId: string;
+    };
+    query?: never;
+    url: '/admin/movies/{movieId}/publish';
+};
+
+export type AdminPublishMovieErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    400: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    412: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    428: Problem;
+};
+
+export type AdminPublishMovieError = AdminPublishMovieErrors[keyof AdminPublishMovieErrors];
+
+export type AdminPublishMovieResponses = {
+    /**
+     * Published movie with the active version and artwork pointers
+     */
+    200: AdminMovie;
+};
+
+export type AdminPublishMovieResponse = AdminPublishMovieResponses[keyof AdminPublishMovieResponses];
+
+export type AdminActivateVersionData = {
+    body: PublishRequest;
+    headers: {
+        'If-Match': string;
+        'Idempotency-Key': string;
+    };
+    path: {
+        movieId: string;
+    };
+    query?: never;
+    url: '/admin/movies/{movieId}/activate';
+};
+
+export type AdminActivateVersionErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    400: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    412: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    428: Problem;
+};
+
+export type AdminActivateVersionError = AdminActivateVersionErrors[keyof AdminActivateVersionErrors];
+
+export type AdminActivateVersionResponses = {
+    /**
+     * Movie with the newly activated version
+     */
+    200: AdminMovie;
+};
+
+export type AdminActivateVersionResponse = AdminActivateVersionResponses[keyof AdminActivateVersionResponses];
+
+export type AdminUnpublishMovieData = {
+    body?: never;
+    headers: {
+        'If-Match': string;
+    };
+    path: {
+        movieId: string;
+    };
+    query?: never;
+    url: '/admin/movies/{movieId}/unpublish';
+};
+
+export type AdminUnpublishMovieErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    412: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    428: Problem;
+};
+
+export type AdminUnpublishMovieError = AdminUnpublishMovieErrors[keyof AdminUnpublishMovieErrors];
+
+export type AdminUnpublishMovieResponses = {
+    /**
+     * UNPUBLISHED movie; the active version is retained
+     */
+    200: AdminMovie;
+};
+
+export type AdminUnpublishMovieResponse = AdminUnpublishMovieResponses[keyof AdminUnpublishMovieResponses];
+
+export type AdminArchiveMovieData = {
+    body?: never;
+    headers: {
+        'If-Match': string;
+    };
+    path: {
+        movieId: string;
+    };
+    query?: never;
+    url: '/admin/movies/{movieId}/archive';
+};
+
+export type AdminArchiveMovieErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    412: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    428: Problem;
+};
+
+export type AdminArchiveMovieError = AdminArchiveMovieErrors[keyof AdminArchiveMovieErrors];
+
+export type AdminArchiveMovieResponses = {
+    /**
+     * ARCHIVED movie
+     */
+    200: AdminMovie;
+};
+
+export type AdminArchiveMovieResponse = AdminArchiveMovieResponses[keyof AdminArchiveMovieResponses];
+
+export type AdminRestoreMovieData = {
+    body?: never;
+    headers: {
+        'If-Match': string;
+    };
+    path: {
+        movieId: string;
+    };
+    query?: never;
+    url: '/admin/movies/{movieId}/restore';
+};
+
+export type AdminRestoreMovieErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    412: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    428: Problem;
+};
+
+export type AdminRestoreMovieError = AdminRestoreMovieErrors[keyof AdminRestoreMovieErrors];
+
+export type AdminRestoreMovieResponses = {
+    /**
+     * Restored UNPUBLISHED movie; restore never republishes
+     */
+    200: AdminMovie;
+};
+
+export type AdminRestoreMovieResponse = AdminRestoreMovieResponses[keyof AdminRestoreMovieResponses];
+
+export type AdminPreviewMovieData = {
+    body?: PublishRequest;
+    path: {
+        movieId: string;
+    };
+    query?: never;
+    url: '/admin/movies/{movieId}/preview';
+};
+
+export type AdminPreviewMovieErrors = {
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    401: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    403: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    404: Problem;
+    /**
+     * RFC 9457 Problem Details with stable extensions
+     */
+    409: Problem;
+};
+
+export type AdminPreviewMovieError = AdminPreviewMovieErrors[keyof AdminPreviewMovieErrors];
+
+export type AdminPreviewMovieResponses = {
+    /**
+     * Short-lived ADMIN preview grant for the requested READY version, or for the active or latest READY version when no mediaVersionId is supplied
+     */
+    200: ManagedPlayback;
+};
+
+export type AdminPreviewMovieResponse = AdminPreviewMovieResponses[keyof AdminPreviewMovieResponses];

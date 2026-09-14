@@ -42,13 +42,23 @@ http {
         keepalive 16;
     }
 
+    # Managed playback loads HLS from the media gateway, and Admin uploads PUT parts straight to
+    # presigned source-bucket URLs, so both are separate origins from the web app. The deployment
+    # supplies the exact origins as MEDIA_ORIGIN and MEDIA_STORAGE_ORIGIN so connect-src names those
+    # origins and nothing else; an unset value expands to nothing and keeps the strict same-origin
+    # policy. The image's 05-render-nginx-config.sh entrypoint script substitutes this file before
+    # Nginx starts.
     server {
         listen 8080;
         listen [::]:8080;
         root /usr/share/nginx/html;
         index index.html;
 
-        add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+        set $media_origin "${MEDIA_ORIGIN}";
+        set $storage_origin "${MEDIA_STORAGE_ORIGIN}";
+        set $csp "default-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self' $media_origin $storage_origin; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+
+        add_header Content-Security-Policy $csp always;
         add_header Referrer-Policy "strict-origin-when-cross-origin" always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header X-Frame-Options "DENY" always;

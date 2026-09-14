@@ -16,10 +16,11 @@ import com.lvfast.streaming.catalog.MovieSummary;
 import com.lvfast.streaming.common.ApiExceptionHandler;
 import com.lvfast.streaming.common.RequestIdFilter;
 import com.lvfast.streaming.identity.AuthRateLimiter;
+import com.lvfast.streaming.identity.RoleService;
 import com.lvfast.streaming.identity.SecurityConfiguration;
 import com.lvfast.streaming.library.LibraryController;
 import com.lvfast.streaming.library.LibraryService;
-import com.lvfast.streaming.playback.Playback;
+import com.lvfast.streaming.playback.FixturePlayback;
 import com.lvfast.streaming.playback.PlaybackController;
 import com.lvfast.streaming.playback.PlaybackService;
 import com.lvfast.streaming.playback.ProgressValidationException;
@@ -103,7 +104,7 @@ class Task4SecurityHttpTest {
     @Test
     void authenticatedPlaybackAndProgressRoutesMatchTheOpenApiContract() throws Exception {
         when(playback.playback(USER_ID, MOVIE_ID))
-                .thenReturn(new Playback(MOVIE_ID, "/media/movie/index.m3u8", 17));
+                .thenReturn(new FixturePlayback(MOVIE_ID, "/media/movie/index.m3u8", 17));
         when(playback.updateProgress(USER_ID, MOVIE_ID, 90, 100, CLIENT_TIME))
                 .thenReturn(new ViewingProgress(MOVIE_ID, 90, 100, CLIENT_TIME, true));
 
@@ -201,8 +202,20 @@ class Task4SecurityHttpTest {
             return mock(PlaybackService.class);
         }
 
+        @Bean com.lvfast.streaming.playback.MediaSessionService mediaSessionService() {
+            return mock(com.lvfast.streaming.playback.MediaSessionService.class);
+        }
+
+        @Bean com.lvfast.streaming.media.job.WorkerAccess workerAccess() {
+            return mock(com.lvfast.streaming.media.job.WorkerAccess.class);
+        }
+
         @Bean AuthRateLimiter authRateLimiter() {
             return mock(AuthRateLimiter.class);
+        }
+
+        @Bean RoleService roleService() {
+            return mock(RoleService.class);
         }
 
         @Bean JwtDecoder jwtDecoder() {

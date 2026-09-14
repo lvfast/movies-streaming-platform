@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 @SpringBootTest(classes = MediaStreamingApplication.class)
+@org.springframework.test.context.ActiveProfiles("test")
 @EnabledIfSystemProperty(named = "catalog.external-it", matches = "true")
 @TestPropertySource(properties = {
         "spring.datasource.url=${catalog.jdbc-url:jdbc:postgresql://host.docker.internal:5432/media_streaming}",
@@ -51,7 +52,7 @@ class CatalogExternalIntegrationTest {
     @Autowired CatalogService catalog;
     @Autowired StringRedisTemplate redis;
     @Autowired RequestIdFilter requestIdFilter;
-    @MockitoSpyBean CatalogCache cache;
+    @MockitoSpyBean CatalogRevisionRepository revisions;
     MockMvc mvc;
 
     @BeforeEach
@@ -147,7 +148,7 @@ class CatalogExternalIntegrationTest {
 
     @Test
     void successfulImportInvalidatesOnlyAfterTheTransactionCommits() throws Exception {
-        String movieKey = "catalog:movie:v1:starlight-archive";
+        String movieKey = "catalog:movie:v" + revisions.current() + ":starlight-archive";
         redis.delete(movieKey);
         assertThat(catalog.movie("starlight-archive").title()).isEqualTo("Starlight Archive");
         assertThat(redis.hasKey(movieKey)).isTrue();
@@ -158,10 +159,10 @@ class CatalogExternalIntegrationTest {
             Object result = invocation.callRealMethod();
             invalidated.countDown();
             if (!releaseInvalidation.await(10, TimeUnit.SECONDS)) {
-                throw new IllegalStateException("Timed out waiting to release cache invalidation");
+                throw new IllegalStateException("Timed out waiting to release catalog revision bump");
             }
             return result;
-        }).when(cache).invalidateAll();
+        }).when(revisions).bump();
         byte[] changed = manifestText()
                 .replace("\"catalog-v3\"", "\"catalog-test-after-commit\"")
                 .replace("Starlight Archive", "Starlight Archive Updated")
@@ -187,7 +188,7 @@ class CatalogExternalIntegrationTest {
 
     @Test
     void rolledBackImportLeavesExistingCacheEntryIntact() {
-        String movieKey = "catalog:movie:v1:starlight-archive";
+        String movieKey = "catalog:movie:v" + revisions.current() + ":starlight-archive";
         redis.delete(movieKey);
         assertThat(catalog.movie("starlight-archive").title()).isEqualTo("Starlight Archive");
         byte[] invalid = manifestText()
@@ -201,14 +202,14 @@ class CatalogExternalIntegrationTest {
 
     @Test
     void publicCatalogAndDetailsMatchTheOpenApiShape() throws Exception {
-        redis.delete("catalog:home:v1");
+        redis.delete("catalog:home:v" + revisions.current());
         mvc.perform(get("/api/v1/catalog/home"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.rails[0].key").isString())
                 .andExpect(jsonPath("$.rails[0].items[0].id").isString())
                 .andExpect(jsonPath("$.rails[0].items[0].genres").isArray());
-        assertThat(redis.hasKey("catalog:home:v1")).isTrue();
+        assertThat(redis.hasKey("catalog:home:v" + revisions.current())).isTrue();
 
         mvc.perform(get("/api/v1/movies/starlight-archive"))
                 .andExpect(status().isOk())

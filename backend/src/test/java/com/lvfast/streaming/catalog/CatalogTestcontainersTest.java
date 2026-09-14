@@ -16,6 +16,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(classes = MediaStreamingApplication.class, properties = "app.auth.enabled=false")
+@org.springframework.test.context.ActiveProfiles("test")
 @Testcontainers(disabledWithoutDocker = true)
 class CatalogTestcontainersTest {
 
@@ -37,10 +38,11 @@ class CatalogTestcontainersTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired StringRedisTemplate redis;
     @Autowired CatalogService catalog;
+    @Autowired CatalogRevisionRepository revisions;
 
     @Test
     void postgresSearchManifestAndRedisCacheIntegrate() {
-        redis.delete("catalog:home:v1");
+        redis.delete("catalog:home:v" + revisions.current());
 
         assertThat(jdbc.queryForObject("select count(*) from movie", Integer.class)).isEqualTo(20);
         assertThat(jdbc.queryForObject(
@@ -69,6 +71,6 @@ class CatalogTestcontainersTest {
         assertThat(starlight.posterUrl()).isEqualTo("/media/artwork/starlight-archive-poster.svg");
         assertThat(starlight.backdropUrl()).isEqualTo("/media/artwork/starlight-archive-backdrop.svg");
         assertThat(catalog.home().rails()).isNotEmpty();
-        assertThat(redis.hasKey("catalog:home:v1")).isTrue();
+        assertThat(redis.hasKey("catalog:home:v" + revisions.current())).isTrue();
     }
 }

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "eventId": "11111111-1111-4111-8111-111111111111",
+  "type": "video.converted.v1",
+  "jobId": "not-a-uuid",
+  "occurredAt": "2026-09-12T10:00:00Z"
+}

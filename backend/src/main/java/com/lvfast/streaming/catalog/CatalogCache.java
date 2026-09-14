@@ -7,5 +7,4 @@ interface CatalogCache {
     void putHome(CatalogHome home);
     Optional<MovieDetails> getMovie(String slug);
     void putMovie(MovieDetails movie);
-    void invalidateAll();
 }

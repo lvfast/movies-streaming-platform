@@ -10,21 +10,31 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class PlaybackService {
     private final PlaybackRepository repository;
+    private final MediaSessionService sessions;
     private final MediaUrlResolver mediaUrls;
 
-    PlaybackService(PlaybackRepository repository, MediaUrlResolver mediaUrls) {
+    PlaybackService(
+            PlaybackRepository repository, MediaSessionService sessions, MediaUrlResolver mediaUrls) {
         this.repository = repository;
+        this.sessions = sessions;
         this.mediaUrls = mediaUrls;
     }
 
+    /**
+     * Managed movies return a version-pinned {@link PlaybackGrant} with a short-lived media token.
+     * Legacy fixture rows keep the original manifest/resume response shape until managed cutover.
+     */
     public Playback playback(UUID userId, UUID movieId) {
         PlayableMovie movie = repository.playableMovie(movieId)
                 .orElseThrow(() -> new MovieNotFoundException(movieId));
+        if (movie.managed()) {
+            return sessions.createViewerSession(userId, movieId);
+        }
         int resumePosition = repository.progress(userId, movieId)
                 .filter(progress -> !progress.completed())
                 .map(ViewingProgress::positionSeconds)
                 .orElse(0);
-        return new Playback(movie.id(), mediaUrls.resolve(movie.manifestUrl()), resumePosition);
+        return new FixturePlayback(movie.id(), mediaUrls.resolve(movie.manifestUrl()), resumePosition);
     }
 
     @Transactional
@@ -40,6 +50,25 @@ public class PlaybackService {
         boolean completed = (long) positionSeconds * 10 >= (long) durationSeconds * 9;
         return repository.save(
                 userId, movieId, positionSeconds, durationSeconds, clientUpdatedAt, completed);
+    }
+
+    /**
+     * Version-pinned progress for a managed playback session. The session, user, movie and version
+     * must all match, so a replacement activation cannot mix resume positions between versions.
+     */
+    @Transactional
+    public VersionedProgress updateManagedProgress(
+            UUID userId,
+            UUID movieId,
+            UUID sessionId,
+            UUID mediaVersionId,
+            int positionSeconds,
+            int durationSeconds,
+            Instant clientUpdatedAt) {
+        validate(positionSeconds, durationSeconds, clientUpdatedAt);
+        return sessions.updateViewerProgress(
+                userId, movieId, sessionId, mediaVersionId, positionSeconds, durationSeconds,
+                clientUpdatedAt);
     }
 
     private void validate(int positionSeconds, int durationSeconds, Instant clientUpdatedAt) {

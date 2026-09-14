@@ -23,17 +23,18 @@ class PlaybackServiceTest {
     private static final Instant CLIENT_TIME = Instant.parse("2026-09-07T00:00:00Z");
 
     @Mock private PlaybackRepository repository;
+    @Mock private MediaSessionService sessions;
     private PlaybackService service;
 
     @BeforeEach
     void setUp() {
-        service = new PlaybackService(repository, new MediaUrlResolver(""));
+        service = new PlaybackService(repository, sessions, new MediaUrlResolver(""));
     }
 
     @Test
     void playbackReturnsTheStoredResumePositionForAnIncompleteMovie() {
         when(repository.playableMovie(MOVIE_ID))
-                .thenReturn(Optional.of(new PlayableMovie(MOVIE_ID, "/media/movie/index.m3u8")));
+                .thenReturn(Optional.of(new PlayableMovie(MOVIE_ID, "/media/movie/index.m3u8", "LEGACY", null)));
         when(repository.progress(USER_ID, MOVIE_ID))
                 .thenReturn(Optional.of(new ViewingProgress(
                         MOVIE_ID, 45, 100, CLIENT_TIME, false)));
@@ -47,10 +48,10 @@ class PlaybackServiceTest {
     @Test
     void playbackResolvesRelativeManifestAgainstConfiguredMediaBase() {
         when(repository.playableMovie(MOVIE_ID))
-                .thenReturn(Optional.of(new PlayableMovie(MOVIE_ID, "/media/movie/index.m3u8")));
+                .thenReturn(Optional.of(new PlayableMovie(MOVIE_ID, "/media/movie/index.m3u8", "LEGACY", null)));
         when(repository.progress(USER_ID, MOVIE_ID)).thenReturn(Optional.empty());
         PlaybackService externallyHosted = new PlaybackService(
-                repository, new MediaUrlResolver("https://media.example.test/library"));
+                repository, sessions, new MediaUrlResolver("https://media.example.test/library"));
 
         assertThat(externallyHosted.playback(USER_ID, MOVIE_ID).manifestUrl())
                 .isEqualTo("https://media.example.test/library/movie/index.m3u8");
@@ -59,7 +60,7 @@ class PlaybackServiceTest {
     @Test
     void playbackStartsAtZeroWhenThereIsNoProgressOrTheMovieWasCompleted() {
         when(repository.playableMovie(MOVIE_ID))
-                .thenReturn(Optional.of(new PlayableMovie(MOVIE_ID, "/media/movie/index.m3u8")));
+                .thenReturn(Optional.of(new PlayableMovie(MOVIE_ID, "/media/movie/index.m3u8", "LEGACY", null)));
         when(repository.progress(USER_ID, MOVIE_ID))
                 .thenReturn(Optional.empty())
                 .thenReturn(Optional.of(new ViewingProgress(
@@ -92,7 +93,7 @@ class PlaybackServiceTest {
     @Test
     void progressBecomesCompletedAtExactlyNinetyPercent() {
         when(repository.playableMovie(MOVIE_ID))
-                .thenReturn(Optional.of(new PlayableMovie(MOVIE_ID, "/media/movie/index.m3u8")));
+                .thenReturn(Optional.of(new PlayableMovie(MOVIE_ID, "/media/movie/index.m3u8", "LEGACY", null)));
         when(repository.save(USER_ID, MOVIE_ID, 89, 100, CLIENT_TIME, false))
                 .thenReturn(new ViewingProgress(MOVIE_ID, 89, 100, CLIENT_TIME, false));
         when(repository.save(USER_ID, MOVIE_ID, 90, 100, CLIENT_TIME, true))

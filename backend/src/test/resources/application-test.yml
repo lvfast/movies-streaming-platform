@@ -1,0 +1,8 @@
+# Test profile: supplies the committed test-only media signing key pair so a context can start
+# without mounting a real secret. Tests that need a distinctive key override these locations with
+# @DynamicPropertySource, which takes precedence over this file.
+app:
+  media:
+    signing:
+      private-key-location: classpath:test-keys/media-test-private.pem
+      public-key-location: classpath:test-keys/media-test-public.pem

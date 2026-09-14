@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 2,
+  "jobId": "22222222-2222-4222-8222-222222222222",
+  "attemptId": "44444444-4444-4444-8444-444444444444",
+  "kind": "TRANSCODE",
+  "profile": "h264-aac-1080p30",
+  "movieId": "55555555-5555-4555-8555-555555555555",
+  "mediaVersionId": "66666666-6666-4666-8666-666666666666",
+  "assetId": null,
+  "width": 0,
+  "height": 1080,
+  "durationSeconds": 10.0,
+  "videoCodec": "h264",
+  "audioCodec": "aac",
+  "playlist": "index.m3u8",
+  "objects": [
+    { "key": "index.m3u8", "sizeBytes": 220, "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+  ]
+}

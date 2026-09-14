@@ -3,8 +3,9 @@ import { ArrowLeft, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../api/api-context';
-import type { Playback, ProgressUpdate } from '../api/streaming-api';
+import type { PlaybackGrant, ProgressPayload } from '../api/streaming-api';
 import { ErrorState, LoadingState } from '../components/feedback';
+import { attachPrivateHls, isManagedPlayback } from '../playback/private-hls';
 import { useSession } from '../session/session-context';
 
 export function PlayerPage() {
@@ -14,7 +15,7 @@ export function PlayerPage() {
   const { status, openAuth } = useSession();
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastSentPosition = useRef<number | null>(null);
-  const [metadata, setMetadata] = useState<Playback | null>(null);
+  const [metadata, setMetadata] = useState<PlaybackGrant | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
   const [resumed, setResumed] = useState(false);
@@ -37,6 +38,26 @@ export function PlayerPage() {
     const video = videoRef.current;
     if (!video || !metadata) return;
 
+    if (isManagedPlayback(metadata)) {
+      // Managed grants always use the token-aware HLS.js transport, even where
+      // the browser could play HLS natively (native playback cannot send the
+      // media bearer header).
+      try {
+        const transport = attachPrivateHls({
+          video,
+          playback: metadata,
+          renew: () => api.mediaToken(metadata.sessionId),
+          onFatalError: (caught) => setError(caught),
+        });
+        return () => transport.destroy();
+      } catch (caught) {
+        // A misconfigured media origin must surface as an error, never as a silent
+        // unauthorized request against the API host.
+        setError(caught);
+        return undefined;
+      }
+    }
+
     if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = metadata.manifestUrl;
       return;
@@ -54,7 +75,7 @@ export function PlayerPage() {
       if (data.fatal) setError(new Error('The video stream could not be loaded.'));
     });
     return () => hls.destroy();
-  }, [metadata]);
+  }, [api, metadata]);
 
   const sendProgress = useCallback(async (force = false) => {
     const video = videoRef.current;
@@ -63,10 +84,13 @@ export function PlayerPage() {
     const positionSeconds = Math.min(durationSeconds, Math.max(0, Math.floor(video.currentTime)));
     if (!force && lastSentPosition.current === positionSeconds) return;
     lastSentPosition.current = positionSeconds;
-    const progress: ProgressUpdate = {
+    const progress: ProgressPayload = {
       positionSeconds,
       durationSeconds,
       clientUpdatedAt: new Date().toISOString(),
+      ...(isManagedPlayback(metadata)
+        ? { sessionId: metadata.sessionId, mediaVersionId: metadata.mediaVersionId }
+        : {}),
     };
     try {
       await api.updateProgress(metadata.movieId, progress);
