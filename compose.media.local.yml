@@ -12,6 +12,8 @@ services:
       MEDIA_SOURCE_BUCKET: ${MEDIA_SOURCE_BUCKET:-media-source}
       MEDIA_DELIVERY_BUCKET: ${MEDIA_DELIVERY_BUCKET:-media-delivery}
       MEDIA_WORKER_CREDENTIAL: ${MEDIA_WORKER_CREDENTIAL:-worker-local-credential}
+      # Must match the kid of the public JWK given to the media gateway, or every media token is 401.
+      MEDIA_SIGNING_KEY_ID: ${MEDIA_SIGNING_KEY_ID:-}
       S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
       S3_BROWSER_ENDPOINT: ${S3_BROWSER_ENDPOINT:-http://localhost:9000}
       S3_REGION: ${S3_REGION:-us-east-1}
