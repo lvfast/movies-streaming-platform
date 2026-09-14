@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "LVFAST Media Streaming Platform",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "viewer-path",
+        "label": "Viewer playback path",
+        "focus": ["browser", "frontend", "backend", "media-gateway", "delivery-storage"],
+        "note": "Follow catalog requests, media-token issuance, and protected HLS delivery."
+      },
+      {
+        "id": "admin-pipeline",
+        "label": "Admin media pipeline",
+      "focus": ["browser", "backend", "source-storage", "command-queue", "transcoder", "delivery-storage"],
+        "note": "Trace multipart upload, durable job dispatch, processing, and verified output."
+      },
+      {
+        "id": "application-state",
+        "label": "Application state",
+        "focus": ["frontend", "backend", "postgres", "redis"],
+        "note": "PostgreSQL is durable state; Redis holds disposable cache and rate-limit data."
+      }
+    ],
+    "viewBox": [1390, 640]
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "external",
+      "label": "Browser",
+      "sublabel": "Viewer and admin",
+      "pos": [40, 170],
+      "size": [150, 72]
+    },
+    {
+      "id": "frontend",
+      "type": "frontend",
+      "label": "React + Nginx",
+      "sublabel": "SPA and same-origin proxy",
+      "pos": [245, 170],
+      "size": [170, 72]
+    },
+    {
+      "id": "backend",
+      "type": "backend",
+      "label": "Spring Boot API",
+      "sublabel": "Modular monolith · /api/v1",
+      "pos": [485, 170],
+      "size": [180, 72]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "Durable application state",
+      "pos": [745, 45],
+      "size": [175, 72]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "Cache and auth rate limits",
+      "pos": [745, 170],
+      "size": [175, 72]
+    },
+    {
+      "id": "source-storage",
+      "type": "cloud",
+      "label": "Source Storage",
+      "sublabel": "MinIO locally · R2 deployable",
+      "pos": [960, 520],
+      "size": [180, 72]
+    },
+    {
+      "id": "command-queue",
+      "type": "messagebus",
+      "label": "RabbitMQ",
+      "sublabel": "Command + result queues",
+      "pos": [720, 365],
+      "size": [175, 72]
+    },
+    {
+      "id": "transcoder",
+      "type": "backend",
+      "label": "Transcoder",
+      "sublabel": "Java worker + FFmpeg",
+      "pos": [960, 365],
+      "size": [175, 72]
+    },
+    {
+      "id": "delivery-storage",
+      "type": "cloud",
+      "label": "Delivery Storage",
+      "sublabel": "HLS and normalized artwork",
+      "pos": [1200, 365],
+      "size": [175, 72]
+    },
+    {
+      "id": "media-gateway",
+      "type": "security",
+      "label": "Media Gateway",
+      "sublabel": "Cloudflare Worker · RS256",
+      "pos": [1200, 170],
+      "size": [175, 72]
+    }
+  ],
+  "connections": [
+    {
+      "id": "browser-frontend",
+      "from": "browser",
+      "to": "frontend",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "frontend-backend",
+      "from": "frontend",
+      "to": "backend",
+      "label": "REST",
+      "variant": "emphasis",
+      "labelAt": [450, 156]
+    },
+    {
+      "id": "backend-postgres",
+      "from": "backend",
+      "to": "postgres",
+      "label": "SQL + Flyway"
+    },
+    {
+      "id": "backend-redis",
+      "from": "backend",
+      "to": "redis"
+    },
+    {
+      "id": "browser-source",
+      "from": "browser",
+      "to": "source-storage",
+      "label": "presigned multipart PUT",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "bottom",
+      "via": [[20, 206], [20, 615], [1050, 615]],
+      "labelAt": [260, 603]
+    },
+    {
+      "id": "backend-command",
+      "from": "backend",
+      "to": "command-queue",
+      "label": "transactional outbox",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [[575, 300], [690, 300], [690, 401]],
+      "labelAt": [630, 288]
+    },
+    {
+      "id": "command-transcoder",
+      "from": "command-queue",
+      "to": "transcoder",
+      "label": "commands ↔ results",
+      "labelAt": [927, 355]
+    },
+    {
+      "id": "transcoder-source",
+      "from": "transcoder",
+      "to": "source-storage",
+      "label": "parallel ranged reads",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [1090, 485]
+    },
+    {
+      "id": "transcoder-delivery",
+      "from": "transcoder",
+      "to": "delivery-storage",
+      "label": "artifacts",
+      "labelAt": [1187, 355]
+    },
+    {
+      "id": "browser-gateway",
+      "from": "browser",
+      "to": "media-gateway",
+      "label": "media JWT + HLS GET",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [[115, 20], [1287.5, 20]],
+      "labelAt": [1070, 35]
+    },
+    {
+      "id": "gateway-delivery",
+      "from": "media-gateway",
+      "to": "delivery-storage",
+      "label": "authorized range read",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [1330, 310]
+    }
+  ]
+}
