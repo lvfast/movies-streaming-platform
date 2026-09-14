@@ -33,8 +33,12 @@ describe('App integration shell', () => {
     expect(screen.getByRole('heading', { name: 'Featured tonight' })).toBeVisible();
     expect(screen.getByRole('navigation', { name: /primary navigation/i })).toBeVisible();
     expect(screen.getByRole('button', { name: /^sign in$/i })).toBeVisible();
-    expect(screen.getByRole('contentinfo')).toHaveTextContent('Accounts and viewing history may be reset.');
-    expect(screen.getByRole('contentinfo')).toHaveTextContent('Use a unique password and avoid personal information.');
+    const footer = screen.getByRole('contentinfo');
+    expect(footer).toHaveTextContent('A personal streaming library');
+    expect(within(footer).getByRole('link', { name: 'vinhphatluu23@gmail.com' }))
+      .toHaveAttribute('href', 'mailto:vinhphatluu23@gmail.com');
+    expect(within(footer).getByRole('link', { name: 'github.com/lvfast' }))
+      .toHaveAttribute('href', 'https://github.com/lvfast');
   });
 
   it('asks a guest to sign in when saving from a movie preview', async () => {

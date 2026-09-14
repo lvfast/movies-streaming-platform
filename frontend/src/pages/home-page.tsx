@@ -166,9 +166,21 @@ export function HomePage() {
         ))}
       </div>
       <footer className="site-footer">
-        <span>DEMO READY</span>
-        <p>Public demo catalog. Accounts and viewing history may be reset.</p>
-        <p>Use a unique password and avoid personal information.</p>
+        <div className="site-footer__brand">
+          <img alt="" className="site-footer__logo" src="/logo/logo.png" />
+          <span>LVFAST CINEMA</span>
+        </div>
+        <div className="site-footer__body">
+          <p className="site-footer__about">
+            A personal streaming library — hand-picked films, series and highlights streaming in HD.
+            Pick up where you left off with resume playback and a watchlist that stays with you.
+          </p>
+          <p className="site-footer__contact">
+            Contact: <a href="mailto:vinhphatluu23@gmail.com">vinhphatluu23@gmail.com</a>
+            <span aria-hidden="true"> · </span>
+            <a href="https://github.com/lvfast" rel="noreferrer" target="_blank">github.com/lvfast</a>
+          </p>
+        </div>
       </footer>
     </main>
   );
