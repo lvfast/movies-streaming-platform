@@ -5,6 +5,7 @@
 .env
 *.pem
 *.key
+!backend/src/test/resources/test-keys/*.pem
 
 backend/target/
 transcoder/target/
