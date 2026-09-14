@@ -76,6 +76,19 @@ class AdminFoundationHttpTest extends ApiTestSupport {
     }
 
     @Test
+    void exposesSportGenreToEditors() {
+        String token = registerAndToken("admin_sport");
+        roleCommand.grantAdmin("admin_sport");
+
+        Result response = get("/api/v1/admin/genres", token);
+        assertThat(response.status()).isEqualTo(200);
+        List<String> names = new ArrayList<>();
+        bodyOf(response).get("items").forEach(node -> names.add(node.get("name").asText()));
+
+        assertThat(names).contains("Sport");
+    }
+
+    @Test
     void adminCreatesReadsListsUpdatesDraft() {
         String token = registerAndToken("admin_editor");
         roleCommand.grantAdmin("admin_editor");
