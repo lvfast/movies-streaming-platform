@@ -106,6 +106,16 @@ class RepositoryPolicyTest(unittest.TestCase):
         self.assertIn('set $storage_origin "${MEDIA_STORAGE_ORIGIN}";', nginx)
         self.assertIn("connect-src 'self' $media_origin $storage_origin;", nginx)
 
+    def test_nginx_csp_allows_gateway_and_storage_images(self):
+        nginx = (ROOT / "frontend/nginx.conf.template").read_text(encoding="utf-8")
+        self.assertIn("img-src 'self' data: $media_origin $storage_origin;", nginx)
+        self.assertIn("media-src 'self' blob: $media_origin;", nginx)
+
+    def test_nginx_forwards_promoted_artwork_to_the_media_origin(self):
+        nginx = (ROOT / "frontend/nginx.conf.template").read_text(encoding="utf-8")
+        self.assertIn("location /public-artwork/ {", nginx)
+        self.assertIn("return 308 $media_origin$request_uri;", nginx)
+
     def test_public_markdown_relative_links_exist(self):
         broken_links = broken_markdown_links()
         self.assertEqual([], broken_links, "Broken relative Markdown links:\n" + "\n".join(broken_links))

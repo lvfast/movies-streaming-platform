@@ -56,7 +56,7 @@ http {
 
         set $media_origin "${MEDIA_ORIGIN}";
         set $storage_origin "${MEDIA_STORAGE_ORIGIN}";
-        set $csp "default-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self' $media_origin $storage_origin; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+        set $csp "default-src 'self'; img-src 'self' data: $media_origin $storage_origin; media-src 'self' blob: $media_origin; connect-src 'self' $media_origin $storage_origin; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
 
         add_header Content-Security-Policy $csp always;
         add_header Referrer-Policy "strict-origin-when-cross-origin" always;
@@ -92,6 +92,16 @@ http {
 
         location /media/ {
             alias /usr/share/nginx/media/;
+        }
+
+        # Promoted artwork is served only by the media gateway. The catalog stores the relative
+        # public-artwork/... reference, so the web origin forwards it to the gateway origin instead
+        # of answering with the SPA shell. Without a gateway origin the reference cannot be served.
+        location /public-artwork/ {
+            if ($media_origin = "") {
+                return 404;
+            }
+            return 308 $media_origin$request_uri;
         }
 
         location /assets/ {
