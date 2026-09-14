@@ -17,7 +17,7 @@ COPY docs/api /workspace/docs/api
 COPY frontend /workspace/frontend
 RUN npm run build
 
-FROM nginx:1.28-alpine AS runtime
+FROM nginx:1.31-alpine AS runtime
 ARG APP_VERSION=dev
 ARG VCS_REF=unknown
 ARG VCS_URL=""
