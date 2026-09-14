@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
@@ -188,5 +188,29 @@ describe('App integration shell', () => {
       '00000000-0000-0000-0000-000000000001',
       expect.objectContaining({ positionSeconds: 52, durationSeconds: 5400 }),
     ));
+  });
+
+  it('hides the resume notice after a few seconds', async () => {
+    vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockReturnValue('probably');
+    const api = createApi({ restoreSession: vi.fn().mockResolvedValue({ ...authTokens, user }) });
+    renderApp(api, '/watch/00000000-0000-0000-0000-000000000001');
+
+    const video = await screen.findByLabelText('Video player') as HTMLVideoElement;
+    Object.defineProperty(video, 'duration', { configurable: true, value: 5400 });
+    Object.defineProperty(video, 'currentTime', { configurable: true, writable: true, value: 0 });
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.loadedMetadata(video);
+      expect(screen.getByRole('status')).toHaveTextContent('Resumed from 0:37');
+
+      act(() => {
+        vi.advanceTimersByTime(10_000);
+      });
+
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

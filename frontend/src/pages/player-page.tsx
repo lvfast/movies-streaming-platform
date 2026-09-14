@@ -8,6 +8,8 @@ import { ErrorState, LoadingState } from '../components/feedback';
 import { attachPrivateHls, isManagedPlayback } from '../playback/private-hls';
 import { useSession } from '../session/session-context';
 
+const RESUME_NOTICE_DURATION_MS = 4_000;
+
 export function PlayerPage() {
   const { movieId = '' } = useParams();
   const api = useApi();
@@ -19,6 +21,7 @@ export function PlayerPage() {
   const [error, setError] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
   const [resumed, setResumed] = useState(false);
+  const [resumeNoticeVisible, setResumeNoticeVisible] = useState(false);
 
   useEffect(() => {
     if (status !== 'authenticated') return;
@@ -26,6 +29,7 @@ export function PlayerPage() {
     setMetadata(null);
     setError(null);
     setResumed(false);
+    setResumeNoticeVisible(false);
     api.playback(movieId)
       .then((playback) => active && setMetadata(playback))
       .catch((caught) => active && setError(caught));
@@ -121,11 +125,20 @@ export function PlayerPage() {
     };
   }, [sendProgress]);
 
+  useEffect(() => {
+    if (!resumeNoticeVisible) return;
+    const timer = window.setTimeout(() => setResumeNoticeVisible(false), RESUME_NOTICE_DURATION_MS);
+    return () => window.clearTimeout(timer);
+  }, [resumeNoticeVisible]);
+
   function applyResumePosition() {
     const video = videoRef.current;
     if (!video || !metadata || resumed) return;
     const resumeAt = Math.min(metadata.resumePositionSeconds, Math.max(0, video.duration || metadata.resumePositionSeconds));
-    if (resumeAt > 0) video.currentTime = resumeAt;
+    if (resumeAt > 0) {
+      video.currentTime = resumeAt;
+      setResumeNoticeVisible(true);
+    }
     setResumed(true);
   }
 
@@ -164,7 +177,7 @@ export function PlayerPage() {
         playsInline
         ref={videoRef}
       />
-      {metadata.resumePositionSeconds > 0 && resumed ? (
+      {resumeNoticeVisible ? (
         <div className="resume-toast" role="status">
           <RotateCcw aria-hidden="true" size={17} />
           Resumed from {formatTime(metadata.resumePositionSeconds)}
