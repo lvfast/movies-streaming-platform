@@ -1,3 +1,7 @@
 node_modules/
 .wrangler/
 .wrangler-dry/
+.dev.vars
+.dev.vars.*
+wrangler.r2-local.jsonc
+r2-gateway-node.mjs

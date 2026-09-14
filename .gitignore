@@ -3,6 +3,8 @@
 .idea/
 .vscode/
 .env
+compose.r2.local.yml
+scripts/run_r2_journey.local.py
 *.pem
 *.key
 !backend/src/test/resources/test-keys/*.pem
