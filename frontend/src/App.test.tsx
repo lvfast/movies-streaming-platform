@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
@@ -33,8 +33,12 @@ describe('App integration shell', () => {
     expect(screen.getByRole('heading', { name: 'Featured tonight' })).toBeVisible();
     expect(screen.getByRole('navigation', { name: /primary navigation/i })).toBeVisible();
     expect(screen.getByRole('button', { name: /^sign in$/i })).toBeVisible();
-    expect(screen.getByRole('contentinfo')).toHaveTextContent('Accounts and viewing history may be reset.');
-    expect(screen.getByRole('contentinfo')).toHaveTextContent('Use a unique password and avoid personal information.');
+    const footer = screen.getByRole('contentinfo');
+    expect(footer).toHaveTextContent('A personal streaming library');
+    expect(within(footer).getByRole('link', { name: 'vinhphatluu23@gmail.com' }))
+      .toHaveAttribute('href', 'mailto:vinhphatluu23@gmail.com');
+    expect(within(footer).getByRole('link', { name: 'github.com/lvfast' }))
+      .toHaveAttribute('href', 'https://github.com/lvfast');
   });
 
   it('asks a guest to sign in when saving from a movie preview', async () => {
@@ -188,5 +192,29 @@ describe('App integration shell', () => {
       '00000000-0000-0000-0000-000000000001',
       expect.objectContaining({ positionSeconds: 52, durationSeconds: 5400 }),
     ));
+  });
+
+  it('hides the resume notice after a few seconds', async () => {
+    vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockReturnValue('probably');
+    const api = createApi({ restoreSession: vi.fn().mockResolvedValue({ ...authTokens, user }) });
+    renderApp(api, '/watch/00000000-0000-0000-0000-000000000001');
+
+    const video = await screen.findByLabelText('Video player') as HTMLVideoElement;
+    Object.defineProperty(video, 'duration', { configurable: true, value: 5400 });
+    Object.defineProperty(video, 'currentTime', { configurable: true, writable: true, value: 0 });
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.loadedMetadata(video);
+      expect(screen.getByRole('status')).toHaveTextContent('Resumed from 0:37');
+
+      act(() => {
+        vi.advanceTimersByTime(10_000);
+      });
+
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
