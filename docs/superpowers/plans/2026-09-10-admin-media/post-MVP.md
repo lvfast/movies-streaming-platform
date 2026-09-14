@@ -78,13 +78,16 @@ This backlog holds hardening and expansion deliberately excluded from the eight 
 
 ## Test infrastructure
 
-- Backend full-suite context/container defect: `MediaTokenTest` (last of the `ApiTestSupport`
-  subclasses in a full run) reuses a Spring-cached context whose datasource still points at an
-  earlier class's dead Testcontainers Postgres port, so all 7 of its tests error with
-  `CannotGetJdbcConnection` while every other test passes (0 failures). The class passes alone and
-  in pairs; the defect only appears after ~17 container cycles in one fork. It is unrelated to P8
-  production code (reproduces with all P8 test classes excluded) and blocks the optional full-suite
-  release gate, not the local MVP completion evidence (P8).
+- FIXED (2026-09-14): backend full-suite context/container defect. Root cause: Spring Framework
+  7.0.9 keys the context cache on the set of `@DynamicPropertySource` methods only, so
+  `AdminFoundationHttpTest` and `MediaTokenTest` — the only `ApiTestSupport` subclasses without a
+  method of their own — shared one cached context while Testcontainers restarted their Postgres
+  container on a new port after the previous class; the reused context then pointed at the stopped
+  container. Fix: `@DirtiesContext(classMode = AFTER_CLASS)` on `ApiTestSupport` evicts each class's
+  context so no cached context can outlive its containers, for current and future subclasses.
+  Evidence: `AdminFoundationHttpTest,MediaTokenTest` 14/14 green (was 7 errors) and full suite
+  `Tests run: 158, Failures: 0, Errors: 0, Skipped: 14` BUILD SUCCESS
+  (`artifacts/fix-pair-foundation-mediatoken.log`, `artifacts/fix-full-backend.log`).
 
 ## Recording new deferred work
 
