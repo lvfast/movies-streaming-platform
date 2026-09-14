@@ -14,9 +14,12 @@ public class MediaUrlResolver {
     }
 
     public String resolve(String reference) {
-        if (reference == null || reference.isBlank() || mediaBaseUrl.isEmpty()
+        if (reference == null || reference.isBlank()
                 || URI.create(reference).isAbsolute() || reference.startsWith("//")) {
             return reference;
+        }
+        if (mediaBaseUrl.isEmpty()) {
+            return reference.startsWith("/") ? reference : "/" + reference;
         }
         String suffix = reference.startsWith(LOCAL_MEDIA_PREFIX + "/")
                 ? reference.substring(LOCAL_MEDIA_PREFIX.length())
