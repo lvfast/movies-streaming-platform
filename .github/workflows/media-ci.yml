@@ -30,6 +30,9 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
+      - name: Install media gateway dependencies
+        working-directory: media-gateway
+        run: npm ci
       - name: Install Playwright Chrome for Testing
         working-directory: frontend
         run: npx playwright install chrome --with-deps
@@ -42,6 +45,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: media-acceptance-evidence
-          path: artifacts/media-acceptance/**/*.json
+          path: |
+            artifacts/media-acceptance/**/*.json
+            artifacts/media-acceptance/**/*.log
           if-no-files-found: warn
           retention-days: 14
