@@ -1,37 +1,15 @@
-import { ArrowRight, Play } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const posterWall = [
-  ['Starlight Archive', 'violet'],
-  ['Paper Moons', 'amber'],
-  ['Quiet Current', 'ocean'],
-  ['Lanterns at Noon', 'sunset'],
-  ['The Last Mapmaker', 'forest'],
-  ['Garden of Gears', 'copper'],
-  ['Northbound Tea', 'rose'],
-  ['Clockwork Kite', 'sky'],
-  ['Blue Hour Bakery', 'indigo'],
-  ['Signal on the Hill', 'crimson'],
-  ['Small Clouds', 'silver'],
-  ['Winter Orchard', 'plum'],
-] as const;
 
 export function LandingPage() {
   return (
     <main className="landing-page">
-      <div className="landing-page__wall" aria-hidden="true">
-        {posterWall.map(([title, tone]) => (
-          <span className={`landing-page__poster landing-page__poster--${tone}`} key={title}>
-            <small>LVFAST ORIGINAL</small>
-            <strong>{title}</strong>
-          </span>
-        ))}
-      </div>
+      <div className="landing-page__wall" aria-hidden="true" />
       <div className="landing-page__veil" aria-hidden="true" />
 
       <section className="landing-page__panel" aria-labelledby="landing-title">
         <div className="landing-page__brand" aria-label="LVFAST Cinema">
-          <span className="landing-page__brand-mark"><Play aria-hidden="true" fill="currentColor" /></span>
+          <span className="landing-page__brand-mark"><img src="/logo/logo.png" alt="" /></span>
           <span>LVFAST<small>CINEMA</small></span>
         </div>
         <p className="landing-page__eyebrow">Your screen. Your escape.</p>

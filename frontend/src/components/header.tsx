@@ -25,7 +25,8 @@ export function Header() {
   return (
     <header className="site-header">
       <Link className="brand" to="/browse" aria-label="LVFAST Cinema home">
-        LVFAST<span>CINEMA</span>
+        <img className="brand__logo" src="/logo/logo.png" alt="" />
+        <span className="brand__wordmark">LVFAST<small>CINEMA</small></span>
       </Link>
       <button
         aria-expanded={menuOpen}

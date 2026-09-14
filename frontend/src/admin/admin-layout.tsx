@@ -1,4 +1,4 @@
-import { ArrowLeft, Clapperboard, LogOut, Menu, X } from 'lucide-react';
+import { ArrowLeft, LogOut, Menu, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useSession } from '../session/session-context';
@@ -53,7 +53,7 @@ export function AdminLayout() {
           <Menu aria-hidden="true" size={20} />
         </button>
         <Link className="admin-brand" to="/admin/movies">
-          <Clapperboard aria-hidden="true" size={20} />
+          <img className="admin-brand__logo" src="/logo/logo.png" alt="" />
           <span>LVFAST<strong> Admin</strong></span>
         </Link>
       </header>
@@ -65,7 +65,7 @@ export function AdminLayout() {
           <X aria-hidden="true" size={20} />
         </button>
         <Link className="admin-brand" to="/admin/movies" onClick={closeMenu}>
-          <Clapperboard aria-hidden="true" size={20} />
+          <img className="admin-brand__logo" src="/logo/logo.png" alt="" />
           <span>LVFAST<strong> Admin</strong></span>
         </Link>
         <nav className="admin-nav" aria-label="Admin navigation">
