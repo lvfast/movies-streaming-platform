@@ -16,6 +16,14 @@ class MediaUrlResolverTest {
     }
 
     @Test
+    void emptyBaseRootsPromotedArtworkKeys() {
+        MediaUrlResolver resolver = new MediaUrlResolver("");
+
+        assertThat(resolver.resolve("public-artwork/5e1c0b4a-0000-0000-0000-000000000001/image.jpg"))
+                .isEqualTo("/public-artwork/5e1c0b4a-0000-0000-0000-000000000001/image.jpg");
+    }
+
+    @Test
     void configuredBaseReplacesTheStoredMediaPrefix() {
         MediaUrlResolver resolver = new MediaUrlResolver("https://media.example.test/library/");
 

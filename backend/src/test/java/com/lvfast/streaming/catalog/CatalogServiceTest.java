@@ -34,6 +34,24 @@ class CatalogServiceTest {
     }
 
     @Test
+    void promotedArtworkIsRootRelativeWithoutAConfiguredMediaBase() {
+        MovieDetails movie = new MovieDetails(
+                UUID.randomUUID(), "movie", "Movie", 2026, 120, "PG",
+                "public-artwork/5e1c0b4a-0000-0000-0000-000000000001/image.jpg",
+                "public-artwork/5e1c0b4a-0000-0000-0000-000000000002/image.jpg",
+                List.of("Drama"), "Synopsis", true);
+        when(cache.getMovie("movie")).thenReturn(Optional.of(movie));
+        CatalogService service = new CatalogService(repository, cache, new MediaUrlResolver(""));
+
+        MovieDetails result = service.movie("movie");
+
+        assertThat(result.posterUrl())
+                .isEqualTo("/public-artwork/5e1c0b4a-0000-0000-0000-000000000001/image.jpg");
+        assertThat(result.backdropUrl())
+                .isEqualTo("/public-artwork/5e1c0b4a-0000-0000-0000-000000000002/image.jpg");
+    }
+
+    @Test
     void cachedMovieIsResolvedAtTheResponseBoundary() {
         MovieDetails movie = new MovieDetails(
                 UUID.randomUUID(), "movie", "Movie", 2026, 120, "PG",

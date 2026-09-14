@@ -76,6 +76,12 @@
   padding: 4px 8px;
 }
 
+.admin-brand__logo {
+  border-radius: 50%;
+  height: 22px;
+  width: 22px;
+}
+
 .admin-brand strong {
   color: var(--admin-accent);
   font-weight: 700;
