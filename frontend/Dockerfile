@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:22.22.2-alpine AS build
+FROM node:26.9.0-alpine AS build
 WORKDIR /workspace
 
 # The media gateway is a separate origin, so the deployed bundle has to know it: an unset value
