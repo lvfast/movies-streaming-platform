@@ -1,5 +1,19 @@
 # LVFAST Media Streaming Platform
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 21">
+  <img src="https://img.shields.io/badge/Spring_Boot-4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot 4">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19">
+  <img src="https://img.shields.io/badge/PostgreSQL-17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL 17">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/RabbitMQ-Media_Jobs-FF6600?style=flat-square&logo=rabbitmq&logoColor=white" alt="RabbitMQ media jobs">
+  <img src="https://img.shields.io/badge/FFmpeg-HLS_Processing-007808?style=flat-square&logo=ffmpeg&logoColor=white" alt="FFmpeg HLS processing">
+  <img src="https://img.shields.io/badge/Cloudflare-R2_%26_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare R2 and Workers">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/lvfast/movies-streaming-platform?style=flat-square" alt="License"></a>
+</p>
+
 A full-stack movie streaming reference application with a public viewing experience, an admin media workflow, asynchronous FFmpeg processing, and token-protected HLS delivery.
 
 LVFAST is built as a portfolio and systems-engineering project: it demonstrates authenticated product flows, direct-to-object-storage uploads, reliable background jobs, immutable media publication, and a disposable local verification environment. The checked-in catalog and media fixtures are synthetic and resettable.
