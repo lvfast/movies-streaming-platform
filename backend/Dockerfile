@@ -11,7 +11,7 @@ COPY backend/src ./src
 RUN --mount=type=cache,target=/root/.m2 \
     mvn --batch-mode --no-transfer-progress -DskipTests package
 
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 ARG APP_VERSION=dev
 ARG VCS_REF=unknown
 ARG VCS_URL=""
